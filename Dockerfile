@@ -4,6 +4,7 @@
 # 🎯 Version Management
 #
 ARG IMAGE="apachesuperset.docker.scarf.sh/apache/superset"
+# using RC version in order to be able to use a context path different from / (SUPERSET_APP_ROOT env var)
 ARG IMAGE_VERSION="6.0.0rc2"
 ARG IMAGE_SHA="48b837a5fe326422cf6b784e0673ccb65c2ed253e784a0097138d14a0cb25a70"
 
@@ -23,6 +24,7 @@ ENV TZ=${TZ}
 
 # Install base packages
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install -y \
         gcc \
         git \
