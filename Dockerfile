@@ -34,15 +34,6 @@ RUN apt-get update && \
         tzdata && \
     apt-get clean
 
-#
-# 📦 Dependency Setup Stage
-#
-FROM base AS dependencies
-
-# Install dependencies
-RUN uv pip install \
-    psycopg2-binary
-
 WORKDIR /build
 
 # Copy build configuration
@@ -51,7 +42,17 @@ COPY .git .git
 # Storing source git branch details
 RUN git show --summary > build.info && \
     chown -R superset:superset /build && \
-    chmod -R 775 /build
+    chmod -R 775 /build && \
+    apt-get remove -y git
+
+#
+# 📦 Dependency Setup Stage
+#
+FROM base AS dependencies
+
+# Install dependencies
+RUN uv pip install \
+    psycopg2-binary
 
 #
 # 🏗️ Build Stage
