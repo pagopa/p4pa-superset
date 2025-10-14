@@ -54,7 +54,9 @@ FROM base AS dependencies
 
 # Install dependencies
 RUN uv pip install \
-    psycopg2-binary
+    psycopg2-binary \
+    authlib \
+    requests
 
 #
 # 🏗️ Build Stage
