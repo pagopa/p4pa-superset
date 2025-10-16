@@ -37,9 +37,10 @@ class CustomAuthView(AuthDBView):
                         login_user(user, remember=False)
                         return redirect(self.appbuilder.get_url_for_index)
                     else:
-                         logger.debug('Utente non trovato e registrazione non permessa.')
+                         logger.debug('User not found new registration not allowed.')
             except Exception as e:
-                logger.debug('Errore generico nel login SSO: %s',e)
+                logger.debug('Generic error: %s',e)
+                return super(CustomAuthView,self).login()
     else:
       logger.debug('Unable to auto login')
       return super(CustomAuthView,self).login()
