@@ -9,9 +9,11 @@ from flask_appbuilder.security.manager import BaseSecurityManager
 from flask_login import login_user, logout_user
 from flask import g, request, redirect
 
-USERINFO_URL = 'https://api.dev.p4pa.pagopa.it/pu/auth/oauth/userinfo' # os.environ.get('AUTH_BASE_URL') + "/oauth/userinfo"
+USERINFO_URL = os.environ.get('AUTH_BASE_URL') + "/oauth/userinfo"
 logger = logging.getLogger(__name__)
 class CustomAuthView(AuthDBView):
+  login_template = 'appbuilder/general/security/login_db.html'
+
   @expose('/sso-login/', methods=['GET','POST'])
   def login(self):
     jwt_token = request.args.get('token')
