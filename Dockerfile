@@ -53,9 +53,10 @@ RUN git show --summary > build.info && \
 FROM base AS dependencies
 
 # Install dependencies
-RUN uv pip install \
-    psycopg2-binary \
+RUN uv pip \
     authlib \
+    install \
+    psycopg2-binary \
     requests
 
 #
