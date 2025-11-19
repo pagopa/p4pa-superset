@@ -2,6 +2,8 @@ import logging
 import os
 import jwt
 from jwt import DecodeError
+from superset import db
+from superset.row_level_security.api import RowLevelSecurityFilter
 from superset.security import SupersetSecurityManager
 from flask import flash
 import requests
@@ -11,6 +13,7 @@ from flask_appbuilder.security.manager import BaseSecurityManager
 from flask_login import login_user, logout_user
 from flask import g, request, redirect
 
+DEBT_POSITIONS_TYPE_ORG_URL = os.environ.get('DEBT_POSITIONS_BASE_URL') + "/crud/debt-position-type-orgs/search/findDebtPositionTypeOrgs"
 USERINFO_URL = os.environ.get('AUTH_BASE_URL') + "/oauth/userinfo"
 logger = logging.getLogger(__name__)
 class CustomAuthView(AuthDBView):
@@ -58,8 +61,10 @@ class CustomAuthView(AuthDBView):
                         email = ''
                         role = sm.find_role(sm.auth_user_registration_role)
                         user = sm.add_user(user_identifier, first_name, last_name, email, role)
+                        self.create_rls(user_data, headers)
                     if user:
                         login_user(user, remember=False)
+                        self.create_rls(user_data, headers)
                         return redirect(self.appbuilder.get_url_for_index)
                     else:
                          logger.debug('User not found new registration not allowed.')
@@ -69,6 +74,33 @@ class CustomAuthView(AuthDBView):
     else:
       logger.debug('Unable to auto login')
       return super(CustomAuthView,self).login()
+
+  def create_rls(self: SupersetSecurityManager, user_data: dict, headers: dict):
+    organizzationId = user_data.get('organizzations', [{}])[0].get('organizationId')
+    queryParamsDict = {"operatorExternalUserId": user_data.get('mappedExternalUserId'), "organizationId": organizzationId}
+    response = requests.get(DEBT_POSITIONS_TYPE_ORG_URL, params=queryParamsDict, headers=headers, timeout=5, verify=False)
+    response.raise_for_status()
+    debt_position_org_data = response.json()
+    rls = RowLevelSecurityFilter()
+    rls.filter_type = "Regular"
+    rls.clause = f"org_id = '{organizzationId}' and dp_type_org_id in ({self.build_debt_position_type_ids_string(debt_position_org_data)})"
+    rls.group_key = "dpTypeOrg"
+    rls.roles = [""]
+    rls.tables = [""]
+    rls.created_by_fk = self.find_user(None, user_data.get('email'))
+
+    db.session.add(rls)
+    db.session.commit()
+
+  def build_debt_position_type_ids_string(self, user_data: dict):
+    dp_type_org_ids_string = ""
+    for x in user_data.get("_embedded").get("debtPositionTypeOrgs"):
+        if len(dp_type_org_ids_string) > 0:
+            dp_type_org_ids_string += ","
+        dp_type_org_ids_string += "'"
+        dp_type_org_ids_string += x.get("debtPositionTypeOrgId")
+        dp_type_org_ids_string += "'"
+    return dp_type_org_ids_string
 
 class CustomSecurityManager(SupersetSecurityManager):
     authdbview = CustomAuthView
