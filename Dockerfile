@@ -57,7 +57,8 @@ RUN uv pip \
     authlib \
     install \
     psycopg2-binary \
-    requests
+    requests \
+    pyjwt
 
 #
 # 🏗️ Build Stage
