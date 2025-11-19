@@ -3,7 +3,6 @@ import os
 import jwt
 from jwt import DecodeError
 from superset import db
-from superset.row_level_security.api import RowLevelSecurityFilter
 from superset.security import SupersetSecurityManager
 from flask import flash
 import requests
@@ -76,6 +75,7 @@ class CustomAuthView(AuthDBView):
       return super(CustomAuthView,self).login()
 
   def create_rls(self: SupersetSecurityManager, user_data: dict, headers: dict):
+    from superset.models.row_level_security import RowLevelSecurityFilter
     organizzationId = user_data.get('organizzations', [{}])[0].get('organizationId')
     queryParamsDict = {"operatorExternalUserId": user_data.get('mappedExternalUserId'), "organizationId": organizzationId}
     response = requests.get(DEBT_POSITIONS_TYPE_ORG_URL, params=queryParamsDict, headers=headers, timeout=5, verify=False)
