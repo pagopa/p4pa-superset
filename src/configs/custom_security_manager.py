@@ -1,7 +1,8 @@
 import logging
 import os
 import jwt
-from jwt import DecodeError, InvalidAudience, InvalidSignature, ImmatureSignature
+from jwt import DecodeError
+from jwt.exceptions import InvalidAudience, InvalidSignature, ImmatureSignature
 from superset.security import SupersetSecurityManager
 from flask import flash
 import requests
