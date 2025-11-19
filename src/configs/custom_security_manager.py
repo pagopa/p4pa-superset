@@ -1,5 +1,7 @@
 import logging
 import os
+import jwt
+from jwt import DecodeError
 from superset.security import SupersetSecurityManager
 from flask import flash
 import requests
@@ -19,6 +21,27 @@ class CustomAuthView(AuthDBView):
     jwt_token = request.args.get('token')
     if not jwt_token:
       return super(CustomAuthView,self).login()
+    try:
+        decoded_token = jwt.decode(
+                    jwt_token,
+                    key=None,
+                    algorithms=["RS512", "RS256"],
+                    options={'verify_signature': False}
+                )
+        scope = decoded_token.get('scope')
+        if scope != 'superset':
+                    logger.debug('JWT Scope mismatch: expected "superset", got "%s"', scope)
+                    flash("Access SSO denied: scope not authorized.", "danger")
+                    return super(CustomAuthView, self).login()
+    except DecodeError as e:
+            logger.debug('Invalid JWT format: %s', e)
+            flash("Format Token Error", "danger")
+            return super(CustomAuthView, self).login()
+    except Exception as e:
+            logger.debug('Generic error during local JWT check: %s', e)
+            flash("Error while verify token.", "danger")
+            return super(CustomAuthView, self).login()
+
     if jwt_token:
             try:
                 headers = {'Authorization': f'Bearer {jwt_token}'}
