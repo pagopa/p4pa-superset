@@ -51,6 +51,7 @@ class CustomAuthView(AuthDBView):
                 response.raise_for_status()
                 user_data = response.json()
                 user_identifier = user_data.get('mappedExternalUserId')
+                organization_id = user_data.get('organizzations', [{}])[0].get('organizationId')
                 if user_identifier:
                     sm = self.appbuilder.sm
                     user = sm.find_user(username=user_identifier)
@@ -60,10 +61,10 @@ class CustomAuthView(AuthDBView):
                         email = ''
                         role = sm.find_role(sm.auth_user_registration_role)
                         user = sm.add_user(user_identifier, first_name, last_name, email, role)
-                        self.create_rls(user_data, headers)
+                        self.upsert_rls(user_identifier, organization_id, headers)
                     if user:
                         login_user(user, remember=False)
-                        self.create_rls(user_data, headers)
+                        self.upsert_rls(user_identifier, organization_id, headers)
                         return redirect(self.appbuilder.get_url_for_index)
                     else:
                          logger.debug('User not found new registration not allowed.')
@@ -74,28 +75,28 @@ class CustomAuthView(AuthDBView):
       logger.debug('Unable to auto login')
       return super(CustomAuthView,self).login()
 
-  def create_rls(self: SupersetSecurityManager, user_data: dict, headers: dict):
+  def upsert_rls(self: SupersetSecurityManager, user_identifier, organization_id, headers: dict):
     from superset.connectors.sqla.models import RowLevelSecurityFilter
-    rls_name= "rls_" + user_data.get('mappedExternalUserId')
-    already_exists = (
+    rls_name= "rls_" + user_identifier
+    rls_clause = self.build_rls_clause(user_identifier, organization_id, headers: dict)
+
+    rls = (
         db.session.query(RowLevelSecurityFilter)
         .filter_by(name=rls_name)
         .first()
     )
-    if already_exists:
+    if rls:
         logger.info(f'RLS {rls_name} already exists')
+        rls.clause = rls_clause
+        #rls.table = []
+        db.session.commit()
+        logger.info(f'RLS {rls_name} updated')
         return
-
-    organizzationId = user_data.get('organizzations', [{}])[0].get('organizationId')
-    queryParamsDict = {"operatorExternalUserId": user_data.get('mappedExternalUserId'), "organizationId": organizzationId}
-    response = requests.get(DEBT_POSITIONS_TYPE_ORG_URL, params=queryParamsDict, headers=headers, timeout=5, verify=False)
-    response.raise_for_status()
-    debt_position_org_data = response.json()
 
     rls = RowLevelSecurityFilter(
         name = rls_name,
         filter_type = "Regular",
-        clause = f"org_id = '{organizzationId}' and dp_type_org_id in ({self.build_debt_position_type_ids_string(debt_position_org_data)})",
+        clause = rls_clause,
         group_key = "dpTypeOrg",
         roles = [],
         tables = []
@@ -103,13 +104,24 @@ class CustomAuthView(AuthDBView):
     db.session.add(rls)
     db.session.commit()
 
-  def build_debt_position_type_ids_string(self, user_data: dict):
+  def build_rls_clause(self, user_identifier, organization_id, headers: dict):
+      debt_position_type_org_data = self.fetch_dept_position_type_orgs(organization_id, user_identifier, headers)
+      debt_position_type_org_ids_string = self.build_debt_position_type_ids_string(debt_position_type_org_data)
+      return f"org_id = '{organization_id}' and dp_type_org_id in ({debt_position_type_org_ids_string})"
+
+  def fetch_dept_position_type_orgs(self, user_identifier, organization_id, headers: dict):
+    queryParamsDict = {"operatorExternalUserId": user_identifier, "organizationId": organization_id}
+    response = requests.get(DEBT_POSITIONS_TYPE_ORG_URL, params=queryParamsDict, headers=headers, timeout=5, verify=False)
+    response.raise_for_status()
+    return response.json()
+
+  def build_debt_position_type_ids_string(self, debt_position_type_org_data: dict):
     dp_type_org_ids_string = ""
-    for x in user_data.get("_embedded").get("debtPositionTypeOrgs"):
+    for debt_position_type_org in debt_position_type_org_data.get("_embedded").get("debtPositionTypeOrgs"):
         if len(dp_type_org_ids_string) > 0:
             dp_type_org_ids_string += ","
         dp_type_org_ids_string += "'"
-        dp_type_org_ids_string += x.get("debtPositionTypeOrgId")
+        dp_type_org_ids_string += debt_position_type_org.get("debtPositionTypeOrgId")
         dp_type_org_ids_string += "'"
     return dp_type_org_ids_string
 
