@@ -75,20 +75,31 @@ class CustomAuthView(AuthDBView):
       return super(CustomAuthView,self).login()
 
   def create_rls(self: SupersetSecurityManager, user_data: dict, headers: dict):
-    from superset.models.row_level_security import RowLevelSecurityFilter
+    from superset.connectors.sqla.models import RowLevelSecurityFilter
+    rls_name= "rls_" + user_data.get('mappedExternalUserId')
+    already_exists = (
+        db.session.query(RowLevelSecurityFilter)
+        .filter_by(name=rls_name)
+        .first()
+    )
+    if already_exists:
+        logger.info(f'RLS {rls_name} already exists')
+        return
+
     organizzationId = user_data.get('organizzations', [{}])[0].get('organizationId')
     queryParamsDict = {"operatorExternalUserId": user_data.get('mappedExternalUserId'), "organizationId": organizzationId}
     response = requests.get(DEBT_POSITIONS_TYPE_ORG_URL, params=queryParamsDict, headers=headers, timeout=5, verify=False)
     response.raise_for_status()
     debt_position_org_data = response.json()
-    rls = RowLevelSecurityFilter()
-    rls.filter_type = "Regular"
-    rls.clause = f"org_id = '{organizzationId}' and dp_type_org_id in ({self.build_debt_position_type_ids_string(debt_position_org_data)})"
-    rls.group_key = "dpTypeOrg"
-    rls.roles = [""]
-    rls.tables = [""]
-    rls.created_by_fk = self.find_user(None, user_data.get('email'))
 
+    rls = RowLevelSecurityFilter(
+        name = rls_name,
+        filter_type = "Regular",
+        clause = f"org_id = '{organizzationId}' and dp_type_org_id in ({self.build_debt_position_type_ids_string(debt_position_org_data)})",
+        group_key = "dpTypeOrg",
+        roles = [],
+        tables = []
+    )
     db.session.add(rls)
     db.session.commit()
 
