@@ -77,22 +77,26 @@ class CustomAuthView(AuthDBView):
 
   def upsert_rls(self: SupersetSecurityManager, user_identifier, organization_id, headers: dict):
     from superset.connectors.sqla.models import RowLevelSecurityFilter
+    logger.info('Executing method upsert_rls')
     rls_name= "rls_" + user_identifier
+    logger.info('Building RLS clause')
     rls_clause = self.build_rls_clause(user_identifier, organization_id, headers)
 
+    logger.info('Try fetching RLS')
     rls = (
         db.session.query(RowLevelSecurityFilter)
         .filter_by(name=rls_name)
         .first()
     )
     if rls:
-        logger.info(f'RLS {rls_name} already exists')
+        logger.info(f'Updating already existing RLS {rls_name}')
         rls.clause = rls_clause
         #rls.table = []
         db.session.commit()
-        logger.info(f'RLS {rls_name} updated')
+        logger.info(f'Updated RLS {rls_name}')
         return
 
+    logger.info(f'Creating RLS {rls_name}')
     rls = RowLevelSecurityFilter(
         name = rls_name,
         filter_type = "Regular",
@@ -103,6 +107,7 @@ class CustomAuthView(AuthDBView):
     )
     db.session.add(rls)
     db.session.commit()
+    logger.info(f'Created RLS {rls_name}')
 
   def build_rls_clause(self, user_identifier, organization_id, headers: dict):
       debt_position_type_org_data = self.fetch_dept_position_type_orgs(organization_id, user_identifier, headers)
@@ -110,12 +115,14 @@ class CustomAuthView(AuthDBView):
       return f"org_id = '{organization_id}' and dp_type_org_id in ({debt_position_type_org_ids_string})"
 
   def fetch_dept_position_type_orgs(self, user_identifier, organization_id, headers: dict):
+    logger.info(f'Fetching DebtPositionTypeOrgs for user {user_identifier}')
     queryParamsDict = {"operatorExternalUserId": user_identifier, "organizationId": organization_id}
     response = requests.get(DEBT_POSITIONS_TYPE_ORG_URL, params=queryParamsDict, headers=headers, timeout=5, verify=False)
     response.raise_for_status()
     return response.json()
 
   def build_debt_position_type_ids_string(self, debt_position_type_org_data: dict):
+    logger.debug(f'Extracting DebtPositionTypeOrgsId')
     dp_type_org_ids_string = ""
     for debt_position_type_org in debt_position_type_org_data.get("_embedded").get("debtPositionTypeOrgs"):
         if len(dp_type_org_ids_string) > 0:
