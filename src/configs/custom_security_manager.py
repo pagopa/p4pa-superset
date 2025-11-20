@@ -51,10 +51,12 @@ class CustomAuthView(AuthDBView):
                 response.raise_for_status()
                 user_data = response.json()
                 user_identifier = user_data.get('mappedExternalUserId')
-                organization_id = user_data.get('organizzations', [{}])[0].get('organizationId')
+                organization_id = user_data.get('resource').get('organization').get('organizationId')
                 if user_identifier:
                     sm = self.appbuilder.sm
                     user = sm.find_user(username=user_identifier)
+                    role = self.create_role_if_missing(f"role_{user_identifier}")
+                    self.assign_role_to_user(role, user)
                     if not user and sm.auth_user_registration:
                         first_name = user_data.get('name')
                         last_name =  user_data.get('familyName')
@@ -75,12 +77,34 @@ class CustomAuthView(AuthDBView):
       logger.debug('Unable to auto login')
       return super(CustomAuthView,self).login()
 
+  def create_role_if_missing(self, role_name):
+    from flask_appbuilder.security.sqla.models import Role
+
+    role = db.session.query(Role).filter_by(name=role_name).first()
+    if role:
+      return role
+
+    logger.info(f'Creating Role {role_name}')
+    role = Role(name=role_name)
+    db.session.add(role)
+    db.session.commit()
+
+    return role
+
+  def assign_role_to_user(self, role, user):
+    if role not in user.roles:
+      logger.info(f'Assigning role {role} to user {user.username}')
+      user.roles.append(role)
+      db.session.commit()
+
   def upsert_rls(self: SupersetSecurityManager, user_identifier, organization_id, headers: dict):
     from superset.connectors.sqla.models import RowLevelSecurityFilter
+    from flask_appbuilder.security.sqla.models import Role
+
     logger.info('Executing method upsert_rls')
     rls_name= "rls_" + user_identifier
     logger.info('Building RLS clause')
-    rls_clause = self.build_rls_clause(user_identifier, organization_id, headers)
+    rls_clause = self.build_dept_position_type_orgs_rls_clause(user_identifier, organization_id, headers)
 
     logger.info('Try fetching RLS')
     rls = (
@@ -102,20 +126,20 @@ class CustomAuthView(AuthDBView):
         filter_type = "Regular",
         clause = rls_clause,
         group_key = "dpTypeOrg",
-        roles = [],
+        roles = [db.session.query(Role).filter_by(name=f"role_{user_identifier}").first()],
         tables = []
     )
     db.session.add(rls)
     db.session.commit()
     logger.info(f'Created RLS {rls_name}')
 
-  def build_rls_clause(self, user_identifier, organization_id, headers: dict):
-      debt_position_type_org_data = self.fetch_dept_position_type_orgs(organization_id, user_identifier, headers)
+  def build_dept_position_type_orgs_rls_clause(self, user_identifier, organization_id, headers: dict):
+      debt_position_type_org_data = self.fetch_dept_position_type_orgs(user_identifier, organization_id, headers)
       debt_position_type_org_ids_string = self.build_debt_position_type_ids_string(debt_position_type_org_data)
       return f"org_id = '{organization_id}' and dp_type_org_id in ({debt_position_type_org_ids_string})"
 
   def fetch_dept_position_type_orgs(self, user_identifier, organization_id, headers: dict):
-    logger.info(f'Fetching DebtPositionTypeOrgs for user {user_identifier}')
+    logger.info(f'Fetching DebtPositionTypeOrgs for user {user_identifier} and org {organization_id}')
     queryParamsDict = {"operatorExternalUserId": user_identifier, "organizationId": organization_id}
     response = requests.get(DEBT_POSITIONS_TYPE_ORG_URL, params=queryParamsDict, headers=headers, timeout=5, verify=False)
     response.raise_for_status()
@@ -128,7 +152,7 @@ class CustomAuthView(AuthDBView):
         if len(dp_type_org_ids_string) > 0:
             dp_type_org_ids_string += ","
         dp_type_org_ids_string += "'"
-        dp_type_org_ids_string += debt_position_type_org.get("debtPositionTypeOrgId")
+        dp_type_org_ids_string += str(debt_position_type_org.get("debtPositionTypeOrgId"))
         dp_type_org_ids_string += "'"
     return dp_type_org_ids_string
 
