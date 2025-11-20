@@ -78,7 +78,7 @@ class CustomAuthView(AuthDBView):
   def upsert_rls(self: SupersetSecurityManager, user_identifier, organization_id, headers: dict):
     from superset.connectors.sqla.models import RowLevelSecurityFilter
     rls_name= "rls_" + user_identifier
-    rls_clause = self.build_rls_clause(user_identifier, organization_id, headers: dict)
+    rls_clause = self.build_rls_clause(user_identifier, organization_id, headers)
 
     rls = (
         db.session.query(RowLevelSecurityFilter)
