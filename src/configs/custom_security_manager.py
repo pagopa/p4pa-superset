@@ -14,7 +14,10 @@ from flask import g, request, redirect
 
 DEBT_POSITIONS_TYPE_ORG_URL = os.environ.get('DEBT_POSITIONS_BASE_URL') + "/crud/debt-position-type-orgs/search/findDebtPositionTypeOrgs"
 USERINFO_URL = os.environ.get('AUTH_BASE_URL') + "/oauth/userinfo"
+ANALYTICS_DB_NAME = os.environ.get('ANALYTICS_DB_NAME')
+SCHEMA_AND_TABLE_NAME_LIST_STRING = os.environ.get("SCHEMA_AND_TABLE_NAME_LIST_STRING")
 logger = logging.getLogger(__name__)
+
 class CustomAuthView(AuthDBView):
   login_template = 'appbuilder/general/security/login_db.html'
 
@@ -55,18 +58,19 @@ class CustomAuthView(AuthDBView):
                 if user_identifier:
                     sm = self.appbuilder.sm
                     user = sm.find_user(username=user_identifier)
-                    role = self.create_role_if_missing(f"role_{user_identifier}")
-                    self.assign_role_to_user(role, user)
                     if not user and sm.auth_user_registration:
                         first_name = user_data.get('name')
                         last_name =  user_data.get('familyName')
                         email = ''
                         role = sm.find_role(sm.auth_user_registration_role)
                         user = sm.add_user(user_identifier, first_name, last_name, email, role)
-                        self.upsert_rls(user_identifier, organization_id, headers)
                     if user:
-                        login_user(user, remember=False)
+                        role = self.create_role_if_missing(f"role_{user_identifier}")
+                        self.assign_role_to_user(role, user)
+                        role = self.create_role_if_missing("access_to_dp_type_orgs")
+                        self.assign_role_to_user(role, user)
                         self.upsert_rls(user_identifier, organization_id, headers)
+                        login_user(user, remember=False)
                         return redirect(self.appbuilder.get_url_for_index)
                     else:
                          logger.debug('User not found new registration not allowed.')
@@ -103,6 +107,7 @@ class CustomAuthView(AuthDBView):
 
     logger.info('Executing method upsert_rls')
     rls_name= "rls_" + user_identifier
+    rls_group="dpTypeOrg"
     logger.info('Building RLS clause')
     rls_clause = self.build_dept_position_type_orgs_rls_clause(user_identifier, organization_id, headers)
 
@@ -115,7 +120,7 @@ class CustomAuthView(AuthDBView):
     if rls:
         logger.info(f'Updating already existing RLS {rls_name}')
         rls.clause = rls_clause
-        #rls.table = []
+        rls.table = self.fetch_all_database_tables_in_list(database_name=ANALYTICS_DB_NAME, schema_and_table_name_list=SCHEMA_AND_TABLE_NAME_LIST_STRING.split(","))
         db.session.commit()
         logger.info(f'Updated RLS {rls_name}')
         return
@@ -125,18 +130,43 @@ class CustomAuthView(AuthDBView):
         name = rls_name,
         filter_type = "Regular",
         clause = rls_clause,
-        group_key = "dpTypeOrg",
+        group_key = rls_group,
         roles = [db.session.query(Role).filter_by(name=f"role_{user_identifier}").first()],
-        tables = []
+        tables = self.fetch_all_database_tables_in_list(database_name=ANALYTICS_DB_NAME, schema_and_table_name_list=SCHEMA_AND_TABLE_NAME_LIST_STRING.split(",")),
     )
     db.session.add(rls)
     db.session.commit()
     logger.info(f'Created RLS {rls_name}')
 
+  def fetch_all_database_tables_in_list(self, database_name, schema_and_table_name_list):
+      return [table for table in [self.fetch_single_database_table(database_name, schema_and_table_name.split('|')[0], schema_and_table_name.split('|')[1]) for schema_and_table_name in schema_and_table_name_list] if table is not None]
+
+  def fetch_single_database_table(self, database_name, schema, table_name):
+    from superset.models.core import Database
+    from superset.connectors.sqla.models import SqlaTable
+
+    database = db.session.query(Database).filter_by(database_name=database_name).first()
+    if not database:
+      logger.error(f'Database {database_name} does not exist')
+      return None
+
+    table = (
+        db.session.query(SqlaTable)
+        .filter_by(
+          table_name=table_name,
+          schema=schema,
+          database_id=database.id
+        ).first()
+    )
+    if not table:
+        logger.error(f'Table {table_name} does not exist in schema {schema} of database {database_name}')
+        return None
+    return table
+
   def build_dept_position_type_orgs_rls_clause(self, user_identifier, organization_id, headers: dict):
       debt_position_type_org_data = self.fetch_dept_position_type_orgs(user_identifier, organization_id, headers)
       debt_position_type_org_ids_string = self.build_debt_position_type_ids_string(debt_position_type_org_data)
-      return f"org_id = '{organization_id}' and dp_type_org_id in ({debt_position_type_org_ids_string})"
+      return f"organization_id = '{organization_id}' and debt_position_type_org_id in ({debt_position_type_org_ids_string})"
 
   def fetch_dept_position_type_orgs(self, user_identifier, organization_id, headers: dict):
     logger.info(f'Fetching DebtPositionTypeOrgs for user {user_identifier} and org {organization_id}')
