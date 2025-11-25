@@ -9,7 +9,7 @@ from flask_appbuilder.security.views import AuthDBView
 from flask_appbuilder.security.views import expose
 from flask_login import login_user
 from flask import request, redirect
-from configs.role_and_permission_manager import RoleAndPermissionManager
+from role_and_permission_manager import RoleAndPermissionManager
 
 USERINFO_URL = os.environ.get('AUTH_BASE_URL') + "/oauth/userinfo"
 logger = logging.getLogger(__name__)

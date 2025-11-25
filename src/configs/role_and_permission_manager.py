@@ -1,7 +1,7 @@
 import logging
 import os
 from superset.security import SupersetSecurityManager
-from configs.rls_manager import RlsManager
+from rls_manager import RlsManager
 
 ANALYTICS_DB_NAME = os.environ.get('ANALYTICS_DB_NAME')
 SCHEMA_AND_TABLE_NAME_LIST_STRING = os.environ.get("SCHEMA_AND_TABLE_NAME_LIST_STRING")

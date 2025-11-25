@@ -47,10 +47,10 @@ class RlsManager:
         return f"organization_id = '{organization_id}' and debt_position_type_org_id in ({debt_position_type_org_ids_string})"
 
     def __fetch_dept_position_type_orgs(self, user_identifier, organization_id, http_headers: dict):
-        query_params_ict = {"operatorExternalUserId": user_identifier, "organizationId": organization_id}
+        query_params_dict = {"operatorExternalUserId": user_identifier, "organizationId": organization_id}
         response = requests.get(
             DEBT_POSITIONS_TYPE_ORG_URL,
-            params=query_params_ict,
+            params=query_params_dict,
             headers=http_headers,
             timeout=5,
             verify=False
