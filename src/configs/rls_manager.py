@@ -52,8 +52,7 @@ class RlsManager:
             DEBT_POSITIONS_TYPE_ORG_URL,
             params=query_params_dict,
             headers=http_headers,
-            timeout=5,
-            verify=False
+            timeout=5
         )
         response.raise_for_status()
         return response.json()

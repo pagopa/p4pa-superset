@@ -50,7 +50,7 @@ class CustomAuthView(AuthDBView):
     if jwt_token:
             try:
                 headers = {'Authorization': f'Bearer {jwt_token}'}
-                response = requests.get(USERINFO_URL, headers=headers, timeout=5, verify=False)
+                response = requests.get(USERINFO_URL, headers=headers, timeout=5)
                 response.raise_for_status()
                 user_data = response.json()
                 user_identifier = user_data.get('mappedExternalUserId')
