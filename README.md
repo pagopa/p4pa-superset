@@ -45,9 +45,12 @@ See [Apache Superset documentation](https://github.com/apache/superset?tab=readm
 
 
 ##### 🧩 Microservices
-| ENV             | DESCRIPTION           | DEFAULT |
-|-----------------|-----------------------|---------|
-| AUTH_BASE_URL   | Auth microservice URL |         |
+| ENV                               | DESCRIPTION                                                                                                                             | DEFAULT |
+|-----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|---------|
+| AUTH_BASE_URL                     | Auth microservice URL                                                                                                                   |         |
+| DEBT_POSITIONS_BASE_URL           | DebtPositions microservice URL                                                                                                          |         |
+| ANALYTICS_DB_NAME                 | Name of Analytics DB                                                                                                                    |         |
+| SCHEMA_AND_TABLE_NAME_LIST_STRING | List of database schema and table which user has access to (example: "aux\|dim_debt_position_type_org,dmt\|dmt_assessments_classified") |         |
 
 ## 🛠️ Getting Started
 
