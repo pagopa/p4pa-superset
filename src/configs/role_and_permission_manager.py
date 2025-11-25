@@ -18,7 +18,7 @@ class RoleAndPermissionManager:
         self.__assign_role_to_user(sm, role, user)
         for schema in self.__extract_schema_name_set(SCHEMA_AND_TABLE_NAME_LIST_STRING.split(",")):
             self.__assign_schema_permission(sm, schema, role)
-        self.rls_manager.upsert_rls(user_identifier, organization_id, http_headers)
+        self.rls_manager.upsert_rls(sm, user_identifier, organization_id, http_headers)
 
     def __assign_role_to_user(self, sm: SupersetSecurityManager, role, user):
         if role not in user.roles:

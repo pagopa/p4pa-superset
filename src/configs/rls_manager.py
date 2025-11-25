@@ -1,5 +1,6 @@
 import logging
 import os
+from superset.security import SupersetSecurityManager
 from superset import db
 import requests
 
@@ -10,15 +11,16 @@ logger = logging.getLogger(__name__)
 
 class RlsManager:
 
-    def upsert_rls(self, user_identifier, organization_id, http_headers: dict):
+    def upsert_rls(self, sm: SupersetSecurityManager, user_identifier, organization_id, http_headers: dict):
         self.__upsert_org_id_and_dp_type_org_ids_rls(
+            sm,
             user_identifier,
             organization_id,
             http_headers,
             SCHEMA_AND_TABLE_NAME_LIST_STRING.split(",")
         )
 
-    def __upsert_org_id_and_dp_type_org_ids_rls(self, user_identifier, organization_id,
+    def __upsert_org_id_and_dp_type_org_ids_rls(self, sm: SupersetSecurityManager, user_identifier, organization_id,
                                               http_headers: dict, schema_and_table_name_list: list):
         from superset.connectors.sqla.models import RowLevelSecurityFilter
 
@@ -35,10 +37,10 @@ class RlsManager:
             .first()
         )
         if rls:
-            self.__update_rls(rls, rls_clause, rls_name)
+            self.__update_rls(sm, rls.id, rls_clause, rls_name, user_identifier, schema_and_table_name_list)
             return
 
-        self.__create_regular_rls(rls_clause, rls_group, rls_name, user_identifier, schema_and_table_name_list)
+        self.__create_regular_rls(sm, rls_clause, rls_group, rls_name, user_identifier, schema_and_table_name_list)
 
     def __build_org_id_and_dp_type_orgs_id_rls_clause(self, user_identifier, organization_id, http_headers: dict):
         logger.info(f'Fetching DebtPositionTypeOrgs for user {user_identifier} and org {organization_id}')
@@ -67,34 +69,49 @@ class RlsManager:
             dp_type_org_ids_string += "'"
         return dp_type_org_ids_string
 
-    def __update_rls(self, rls, rls_clause, rls_name):
+    def __update_rls(self, sm: SupersetSecurityManager, rls_id, rls_clause, rls_name, user_identifier, schema_and_table_name_list):
+        from superset.commands.security.update import UpdateRLSRuleCommand
+
         logger.info(f'Updating already existing RLS {rls_name}')
-        rls.clause = rls_clause
-        rls.table = self.__fetch_all_database_tables_in_list(
-            database_name=ANALYTICS_DB_NAME,
-            schema_and_table_name_list=SCHEMA_AND_TABLE_NAME_LIST_STRING.split(",")
-        )
-        db.session.commit()
-        logger.info(f'Updated RLS {rls_name}')
-
-    def __create_regular_rls(self, rls_clause, rls_group, rls_name, user_identifier, schema_and_table_name_list):
-        from superset.connectors.sqla.models import RowLevelSecurityFilter
-        from flask_appbuilder.security.sqla.models import Role
-
-        logger.info(f'Creating RLS {rls_name}')
-        rls = RowLevelSecurityFilter(
-            name=rls_name,
-            filter_type="Regular",
-            clause=rls_clause,
-            group_key=rls_group,
-            roles=[db.session.query(Role).filter_by(name=f"role_{user_identifier}").first()],
-            tables=self.__fetch_all_database_tables_in_list(
+        updated_rls = {
+            "clause": rls_clause,
+            "roles": [
+                sm.find_role(f"role_{user_identifier}").id
+            ],
+            "tables": self.__fetch_all_database_tables_in_list(
                 database_name=ANALYTICS_DB_NAME,
                 schema_and_table_name_list=schema_and_table_name_list
             )
-        )
-        db.session.add(rls)
-        db.session.commit()
+        }
+        try:
+            UpdateRLSRuleCommand(rls_id, updated_rls).run()
+        except Exception as ex:
+            logger.error(f"Error updating RLS rule {rls_name}: {str(ex)}")
+            raise ex
+        logger.info(f'Updated RLS {rls_name}')
+
+    def __create_regular_rls(self, sm: SupersetSecurityManager, rls_clause, rls_group, rls_name, user_identifier, schema_and_table_name_list):
+        from superset.commands.security.create import CreateRLSRuleCommand
+
+        logger.info(f'Creating RLS {rls_name}')
+        rls = {
+            "name": rls_name,
+            "filter_type": "Regular",
+            "clause": rls_clause,
+            "group_key": rls_group,
+            "roles": [
+                sm.find_role(f"role_{user_identifier}").id
+            ],
+            "tables": self.__fetch_all_database_tables_in_list(
+                database_name=ANALYTICS_DB_NAME,
+                schema_and_table_name_list=schema_and_table_name_list
+            )
+        }
+        try:
+            CreateRLSRuleCommand(rls).run()
+        except Exception as ex:
+            logger.error(f"Error creating RLS rule {rls_name}: {str(ex)}")
+            raise ex
         logger.info(f'Created RLS {rls_name}')
 
     def __fetch_all_database_tables_in_list(self, database_name, schema_and_table_name_list):
@@ -106,7 +123,7 @@ class RlsManager:
             self.__fetch_single_database_table(database_name, schema_and_table_tuple[0], schema_and_table_tuple[1])
             for schema_and_table_tuple in schema_and_table_name_tuple_list
         ]
-        return [table for table in db_tables if table is not None]
+        return [table.id for table in db_tables if table is not None]
 
     def __fetch_single_database_table(self, database_name, schema, table_name):
         from superset.models.core import Database
