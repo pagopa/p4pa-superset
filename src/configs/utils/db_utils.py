@@ -1,4 +1,7 @@
 from superset import db
+import logging
+
+logger = logging.getLogger(__name__)
 
 class SupersetDatabaseUtils:
     @staticmethod
@@ -33,3 +36,11 @@ class SupersetDatabaseUtils:
             logger.warning(f'Datasource {datasource_name} does not exist in schema {schema} of database {database_name}')
             return None
         return datasource
+
+    @staticmethod
+    def fetch_all_datasource_id_in_list(analytics_db_name, analytics_db_schema_name, datasource_name_list):
+        datasource_list = [
+            SupersetDatabaseUtils.fetch_superset_datasource(analytics_db_name, analytics_db_schema_name, datasource_name)
+            for datasource_name in datasource_name_list
+        ]
+        return [datasource.id for datasource in datasource_list if datasource is not None]

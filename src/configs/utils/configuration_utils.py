@@ -1,4 +1,5 @@
 import os
+from configs.utils.constant_utils import ConstantUtils
 
 class ConfigurationUtils:
     __OPERATOR_DATASOURCE_ACCESS_PERMISSION_LIST = os.environ.get("OPERATOR_DATASOURCE_ACCESS_PERMISSION_LIST")
@@ -7,10 +8,10 @@ class ConfigurationUtils:
     __DEFAULT_DATASOURCE_ACCESS_PERMISSION_LIST = os.environ.get("DEFAULT_DATASOURCE_ACCESS_PERMISSION_LIST")
 
     __pu_superset_roles = [
-        "operator_access_role",
-        "organization_admin_access_role",
-        "broker_admin_access_role",
-        "default_access_role"
+        ConstantUtils.getSupersetOperatorRoleName(),
+        ConstantUtils.getSupersetOrganizationAdminRoleName(),
+        ConstantUtils.getSupersetBrokerAdminRoleName(),
+        ConstantUtils.getSupersetDefaultRoleName()
     ]
 
     @staticmethod
