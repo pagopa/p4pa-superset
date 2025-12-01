@@ -4,16 +4,12 @@ from superset.security import SupersetSecurityManager
 import requests
 from pu_user_info_dto import PUUserInfo
 from db_utils import SupersetDatabaseUtils
+from configuration_utils import ConfigurationUtils
 
 DEBT_POSITIONS_TYPE_ORG_URL = os.environ.get('DEBT_POSITIONS_BASE_URL') + "/crud/debt-position-type-orgs/search/findDebtPositionTypeOrgs"
 
 ANALYTICS_DB_NAME = os.environ.get('ANALYTICS_DB_NAME')
 ANALYTICS_DB_SCHEMA_NAME = os.environ.get('ANALYTICS_DB_SCHEMA_NAME')
-
-OPERATOR_DATASOURCE_ACCESS_PERMISSION_LIST = os.environ.get("OPERATOR_DATASOURCE_ACCESS_PERMISSION_LIST")
-ORGANIZATION_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST = os.environ.get("ORGANIZATION_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST")
-BROKER_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST = os.environ.get("BROKER_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST")
-DEFAULT_DATASOURCE_ACCESS_PERMISSION_LIST = os.environ.get("DEFAULT_DATASOURCE_ACCESS_PERMISSION_LIST")
 
 logger = logging.getLogger(__name__)
 
@@ -25,12 +21,7 @@ class RlsManager:
             pu_user_info.id,
             pu_user_info.organization_id,
             http_headers,
-            set((
-                OPERATOR_DATASOURCE_ACCESS_PERMISSION_LIST + ',' +
-                ORGANIZATION_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST + ',' +
-                BROKER_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST + ',' +
-                DEFAULT_DATASOURCE_ACCESS_PERMISSION_LIST
-            ).split(","))
+            ConfigurationUtils.getAllDatasourceNameList()
         )
 
     def __upsert_org_id_and_dp_type_org_ids_rls(self, sm: SupersetSecurityManager, user_identifier, organization_id,

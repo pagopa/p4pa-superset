@@ -45,12 +45,16 @@ See [Apache Superset documentation](https://github.com/apache/superset?tab=readm
 
 
 ##### 🧩 Microservices
-| ENV                               | DESCRIPTION                                                                                                                             | DEFAULT |
-|-----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|---------|
-| AUTH_BASE_URL                     | Auth microservice URL                                                                                                                   |         |
-| DEBT_POSITIONS_BASE_URL           | DebtPositions microservice URL                                                                                                          |         |
-| ANALYTICS_DB_NAME                 | Name of Analytics DB                                                                                                                    |         |
-| SCHEMA_AND_TABLE_NAME_LIST_STRING | List of database schema and table which user has access to (example: "aux\|dim_debt_position_type_org,dmt\|dmt_assessments_classified") |         |
+| ENV                                                  | DESCRIPTION                                                      | DEFAULT |
+|------------------------------------------------------|------------------------------------------------------------------|---------|
+| AUTH_BASE_URL                                        | Auth microservice URL                                            |         |
+| DEBT_POSITIONS_BASE_URL                              | DebtPositions microservice URL                                   |         |
+| ANALYTICS_DB_NAME                                    | Name of Analytics DB                                             |         |
+| ANALYTICS_DB_SCHEMA_NAME                             | Name of Analytics DB datamart schema                             |         |
+| OPERATOR_DATASOURCE_ACCESS_PERMISSION_LIST           | List of database table name that an operator can access          |         |
+| ORGANIZATION_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST | List of database table name that a organization admin can access |         |
+| BROKER_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST       | List of database table name that a broker admin can access       |         |
+| DEFAULT_DATASOURCE_ACCESS_PERMISSION_LIST            | Default database table name access list                          |         |
 
 ## 🛠️ Getting Started
 
