@@ -64,8 +64,11 @@ RUN uv pip install \
 #
 FROM dependencies AS build
 
-# Copy source code
-COPY --chown=superset:superset src /app
+# Copy configs
+COPY --chown=superset:superset src/configs /app/configs
+
+# Copy static assets
+COPY --chown=superset:superset src/static /app/superset/static
 
 #
 # 🚀 Runtime Stage
