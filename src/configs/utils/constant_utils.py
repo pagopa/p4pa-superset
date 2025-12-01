@@ -6,7 +6,7 @@ class ConstantUtils:
     __SUPERSET_BROKER_ADMIN_ROLE_NAME = "broker_admin_access_role"
     __SUPERSET_DEFAULT_ROLE_NAME = "default_access_role"
 
-    __PU_OPERATOR_ROLE_NAME = "ROLE_OPERATOR"
+    __PU_OPERATOR_ROLE_NAME = "ROLE_OPER"
     __PU_ROLE_ADMIN_NAME = "ROLE_ADMIN"
 
     __DEBT_POSITIONS_TYPE_ORG_URL = os.environ.get('DEBT_POSITIONS_BASE_URL') + "/crud/debt-position-type-orgs/search/findDebtPositionTypeOrgs"
