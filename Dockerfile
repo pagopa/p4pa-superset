@@ -66,8 +66,8 @@ FROM dependencies AS build
 
 # Copy source code
 COPY --chown=superset:superset src /app
-#
-#COPY --chown=superset:superset src/superset_config.py /app/pythonpath/superset_config.py
+# Copy custom configs
+COPY --chown=superset:superset src/configs/superset_config.py /app/pythonpath/superset_config.py
 
 #
 # 🚀 Runtime Stage
