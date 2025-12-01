@@ -61,7 +61,7 @@ class CustomAuthView(AuthDBView):
                     if not user and sm.auth_user_registration:
                         first_name = user_data.get('name')
                         last_name =  user_data.get('familyName')
-                        email = ''
+                        email = user_data.get('resource').get('organization').get('email')
                         role = sm.find_role(sm.auth_user_registration_role)
                         user = sm.add_user(user_identifier, first_name, last_name, email, role)
                     if user:
