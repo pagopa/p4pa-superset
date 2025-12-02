@@ -2,16 +2,16 @@ import os
 from configs.utils.constant_utils import ConstantUtils
 
 class ConfigurationUtils:
-    __OPERATOR_DATASOURCE_ACCESS_PERMISSION_LIST_STRING = "v_assessment_classified"
-    __ORGANIZATION_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST_STRING = ""
-    __BROKER_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST_STRING = ""
-    __DEFAULT_DATASOURCE_ACCESS_PERMISSION_LIST_STRING = ""
+    __DEFAULT_DATASOURCE_ACCESS_PERMISSION_LIST = []
+    __OPERATOR_DATASOURCE_ACCESS_PERMISSION_LIST = ["v_assessment_classified"]
+    __ORGANIZATION_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST = []
+    __BROKER_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST = []
 
     __pu_superset_roles = [
+        ConstantUtils.getSupersetDefaultRoleName(),
         ConstantUtils.getSupersetOperatorRoleName(),
         ConstantUtils.getSupersetOrganizationAdminRoleName(),
-        ConstantUtils.getSupersetBrokerAdminRoleName(),
-        ConstantUtils.getSupersetDefaultRoleName()
+        ConstantUtils.getSupersetBrokerAdminRoleName()
     ]
 
     @staticmethod
@@ -20,37 +20,37 @@ class ConfigurationUtils:
 
     @staticmethod
     def getAllDatasourceNameList():
-        return set((
-            ConfigurationUtils.__OPERATOR_DATASOURCE_ACCESS_PERMISSION_LIST_STRING + ',' +
-            ConfigurationUtils.__ORGANIZATION_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST_STRING + ',' +
-            ConfigurationUtils.__BROKER_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST_STRING + ',' +
-            ConfigurationUtils.__DEFAULT_DATASOURCE_ACCESS_PERMISSION_LIST_STRING
-        ).split(","))
+        return set(
+            ConfigurationUtils.__DEFAULT_DATASOURCE_ACCESS_PERMISSION_LIST +
+            ConfigurationUtils.__OPERATOR_DATASOURCE_ACCESS_PERMISSION_LIST +
+            ConfigurationUtils.__ORGANIZATION_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST +
+            ConfigurationUtils.__BROKER_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST
+        )
 
     @staticmethod
     def getOperatorDatasourceNameList():
-        return set((
-            ConfigurationUtils.__OPERATOR_DATASOURCE_ACCESS_PERMISSION_LIST_STRING + ',' +
-            ConfigurationUtils.__DEFAULT_DATASOURCE_ACCESS_PERMISSION_LIST_STRING
-        ).split(","))
+        return set(
+            ConfigurationUtils.__DEFAULT_DATASOURCE_ACCESS_PERMISSION_LIST +
+            ConfigurationUtils.__OPERATOR_DATASOURCE_ACCESS_PERMISSION_LIST
+        )
 
     @staticmethod
     def getOrganizationAdminDatasourceNameList():
-        return set((
-            ConfigurationUtils.__OPERATOR_DATASOURCE_ACCESS_PERMISSION_LIST_STRING + ',' +
-            ConfigurationUtils.__ORGANIZATION_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST_STRING + ',' +
-            ConfigurationUtils.__DEFAULT_DATASOURCE_ACCESS_PERMISSION_LIST_STRING
-        ).split(","))
+        return set(
+            ConfigurationUtils.__DEFAULT_DATASOURCE_ACCESS_PERMISSION_LIST +
+            ConfigurationUtils.__OPERATOR_DATASOURCE_ACCESS_PERMISSION_LIST +
+            ConfigurationUtils.__ORGANIZATION_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST
+        )
 
     @staticmethod
     def getBrokerAdminDatasourceNameList():
-        return set((
-            ConfigurationUtils.__OPERATOR_DATASOURCE_ACCESS_PERMISSION_LIST_STRING + ',' +
-            ConfigurationUtils.__ORGANIZATION_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST_STRING + ',' +
-            ConfigurationUtils.__BROKER_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST_STRING + ',' +
-            ConfigurationUtils.__DEFAULT_DATASOURCE_ACCESS_PERMISSION_LIST_STRING
-        ).split(","))
+        return set(
+            ConfigurationUtils.__DEFAULT_DATASOURCE_ACCESS_PERMISSION_LIST +
+            ConfigurationUtils.__OPERATOR_DATASOURCE_ACCESS_PERMISSION_LIST +
+            ConfigurationUtils.__ORGANIZATION_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST +
+            ConfigurationUtils.__BROKER_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST
+        )
 
     @staticmethod
     def getDefaultDatasourceNameList():
-        return ConfigurationUtils.__DEFAULT_DATASOURCE_ACCESS_PERMISSION_LIST_STRING
+        return set(ConfigurationUtils.__DEFAULT_DATASOURCE_ACCESS_PERMISSION_LIST)
