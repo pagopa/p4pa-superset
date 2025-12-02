@@ -45,12 +45,12 @@ See [Apache Superset documentation](https://github.com/apache/superset?tab=readm
 
 
 ##### 🧩 Microservices
-| ENV                               | DESCRIPTION                                                                                                                             | DEFAULT |
-|-----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|---------|
-| AUTH_BASE_URL                     | Auth microservice URL                                                                                                                   |         |
-| DEBT_POSITIONS_BASE_URL           | DebtPositions microservice URL                                                                                                          |         |
-| ANALYTICS_DB_NAME                 | Name of Analytics DB                                                                                                                    |         |
-| SCHEMA_AND_TABLE_NAME_LIST_STRING | List of database schema and table which user has access to (example: "aux\|dim_debt_position_type_org,dmt\|dmt_assessments_classified") |         |
+| ENV                                                  | DESCRIPTION                                                      | DEFAULT |
+|------------------------------------------------------|------------------------------------------------------------------|---------|
+| AUTH_BASE_URL                                        | Auth microservice URL                                            |         |
+| DEBT_POSITIONS_BASE_URL                              | DebtPositions microservice URL                                   |         |
+| ANALYTICS_DB_NAME                                    | Name of Analytics DB                                             |         |
+| ANALYTICS_DB_SCHEMA_NAME                             | Name of Analytics DB datamart schema                             |         |
 
 ## 🛠️ Getting Started
 

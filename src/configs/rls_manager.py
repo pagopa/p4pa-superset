@@ -1,87 +1,61 @@
 import logging
 import os
 from superset.security import SupersetSecurityManager
-from superset import db
-import requests
+from configs.dto.pu_user_info_dto import PUUserInfo
+from configs.utils.db_utils import SupersetDatabaseUtils
+from configs.utils.configuration_utils import ConfigurationUtils
+from configs.utils.constant_utils import ConstantUtils
+from configs.utils.superset_resource_utils import SupersetResourceUtils
+from configs.connector.debt_position_connector import DebtPositionConnector
 
-DEBT_POSITIONS_TYPE_ORG_URL = os.environ.get('DEBT_POSITIONS_BASE_URL') + "/crud/debt-position-type-orgs/search/findDebtPositionTypeOrgs"
-ANALYTICS_DB_NAME = os.environ.get('ANALYTICS_DB_NAME')
-SCHEMA_AND_TABLE_NAME_LIST_STRING = os.environ.get("SCHEMA_AND_TABLE_NAME_LIST_STRING")
+DEBT_POSITIONS_TYPE_ORG_URL = ConstantUtils.getDebtPositionsTypeOrgURL()
+
+ANALYTICS_DB_NAME = ConstantUtils.getAnalyticsDbName()
+ANALYTICS_DB_SCHEMA_NAME = ConstantUtils.getAnalyticsDbSchemaName()
+
 logger = logging.getLogger(__name__)
 
 class RlsManager:
 
-    def upsert_rls(self, sm: SupersetSecurityManager, user_identifier, organization_id, http_headers: dict):
-        self.__upsert_org_id_and_dp_type_org_ids_rls(
+    def upsert_rls(self, sm: SupersetSecurityManager, pu_user_info: PUUserInfo, http_headers: dict):
+        self.__upsert_org_id_and_debt_position_type_org_ids_rls(
             sm,
-            user_identifier,
-            organization_id,
+            pu_user_info.id,
+            pu_user_info.organization_id,
             http_headers,
-            SCHEMA_AND_TABLE_NAME_LIST_STRING.split(",")
+            ConfigurationUtils.getAllDatasourceNameList()
         )
 
-    def __upsert_org_id_and_dp_type_org_ids_rls(self, sm: SupersetSecurityManager, user_identifier, organization_id,
-                                              http_headers: dict, schema_and_table_name_list: list):
-        from superset.connectors.sqla.models import RowLevelSecurityFilter
+    def __upsert_org_id_and_debt_position_type_org_ids_rls(self, sm: SupersetSecurityManager, user_identifier,
+                                                           organization_id, http_headers: dict, datasource_name_list: list):
 
-        logger.info('Executing method upsert_rls')
-        rls_name = "rls_" + user_identifier
+        rls_name = ConstantUtils.getSupersetRLSPrefix() + user_identifier
         rls_group = "dpTypeOrg"
-        logger.info('Building RLS clause')
+        logger.info(f'Building {rls_name} RLS clause')
         rls_clause = self.__build_org_id_and_dp_type_orgs_id_rls_clause(user_identifier, organization_id, http_headers)
 
-        logger.info('Try fetching RLS')
-        rls = (
-            db.session.query(RowLevelSecurityFilter)
-            .filter_by(name=rls_name)
-            .first()
-        )
+        logger.info(f'Fetching RLS {rls_name}')
+        rls = SupersetDatabaseUtils.fetch_row_level_security(rls_name)
         if rls:
-            self.__update_rls(sm, rls.id, rls_clause, rls_name, user_identifier, schema_and_table_name_list)
+            self.__update_rls(sm, rls.id, rls_clause, rls_name, user_identifier, datasource_name_list)
             return
 
-        self.__create_regular_rls(sm, rls_clause, rls_group, rls_name, user_identifier, schema_and_table_name_list)
+        self.__create_regular_rls(sm, rls_group, rls_clause, rls_name, user_identifier, datasource_name_list)
 
     def __build_org_id_and_dp_type_orgs_id_rls_clause(self, user_identifier, organization_id, http_headers: dict):
-        logger.info(f'Fetching DebtPositionTypeOrgs for user {user_identifier} and org {organization_id}')
-        debt_position_type_org_data = self.__fetch_dept_position_type_orgs(user_identifier, organization_id, http_headers)
-        debt_position_type_org_ids_string = self.__build_debt_position_type_ids_string(debt_position_type_org_data)
-        return f"organization_id = '{organization_id}' and debt_position_type_org_id in ({debt_position_type_org_ids_string})"
+        debt_position_type_org_ids = DebtPositionConnector.fetch_dept_position_type_org_ids(user_identifier, organization_id, http_headers)
+        return SupersetResourceUtils.build_rls_for_org_id_and_debt_position_type_org_id(organization_id, debt_position_type_org_ids)
 
-    def __fetch_dept_position_type_orgs(self, user_identifier, organization_id, http_headers: dict):
-        query_params_dict = {"operatorExternalUserId": user_identifier, "organizationId": organization_id}
-        response = requests.get(
-            DEBT_POSITIONS_TYPE_ORG_URL,
-            params=query_params_dict,
-            headers=http_headers,
-            timeout=5
-        )
-        response.raise_for_status()
-        return response.json()
-
-    def __build_debt_position_type_ids_string(self, debt_position_type_org_data: dict):
-        dp_type_org_ids_string = ""
-        for debt_position_type_org in debt_position_type_org_data.get("_embedded").get("debtPositionTypeOrgs"):
-            if len(dp_type_org_ids_string) > 0:
-                dp_type_org_ids_string += ","
-            dp_type_org_ids_string += "'"
-            dp_type_org_ids_string += str(debt_position_type_org.get("debtPositionTypeOrgId"))
-            dp_type_org_ids_string += "'"
-        return dp_type_org_ids_string
-
-    def __update_rls(self, sm: SupersetSecurityManager, rls_id, rls_clause, rls_name, user_identifier, schema_and_table_name_list):
+    def __update_rls(self, sm: SupersetSecurityManager, rls_id, rls_clause, rls_name, user_identifier, datasource_name_list):
         from superset.commands.security.update import UpdateRLSRuleCommand
 
         logger.info(f'Updating already existing RLS {rls_name}')
         updated_rls = {
             "clause": rls_clause,
             "roles": [
-                sm.find_role(f"role_{user_identifier}").id
+                sm.find_role(ConstantUtils.getSupersetRolePrefix() + user_identifier).id
             ],
-            "tables": self.__fetch_all_database_tables_in_list(
-                database_name=ANALYTICS_DB_NAME,
-                schema_and_table_name_list=schema_and_table_name_list
-            )
+            "tables": SupersetDatabaseUtils.fetch_all_datasource_id_in_list(ANALYTICS_DB_NAME, ANALYTICS_DB_SCHEMA_NAME, datasource_name_list)
         }
         try:
             UpdateRLSRuleCommand(rls_id, updated_rls).run()
@@ -90,7 +64,7 @@ class RlsManager:
             raise ex
         logger.info(f'Updated RLS {rls_name}')
 
-    def __create_regular_rls(self, sm: SupersetSecurityManager, rls_clause, rls_group, rls_name, user_identifier, schema_and_table_name_list):
+    def __create_regular_rls(self, sm: SupersetSecurityManager, rls_group, rls_clause, rls_name, user_identifier, datasource_name_list):
         from superset.commands.security.create import CreateRLSRuleCommand
 
         logger.info(f'Creating RLS {rls_name}')
@@ -100,12 +74,9 @@ class RlsManager:
             "clause": rls_clause,
             "group_key": rls_group,
             "roles": [
-                sm.find_role(f"role_{user_identifier}").id
+                sm.find_role(ConstantUtils.getSupersetRolePrefix() + user_identifier).id
             ],
-            "tables": self.__fetch_all_database_tables_in_list(
-                database_name=ANALYTICS_DB_NAME,
-                schema_and_table_name_list=schema_and_table_name_list
-            )
+            "tables": SupersetDatabaseUtils.fetch_all_datasource_id_in_list(ANALYTICS_DB_NAME, ANALYTICS_DB_SCHEMA_NAME, datasource_name_list)
         }
         try:
             CreateRLSRuleCommand(rls).run()
@@ -113,36 +84,3 @@ class RlsManager:
             logger.error(f"Error creating RLS rule {rls_name}: {str(ex)}")
             raise ex
         logger.info(f'Created RLS {rls_name}')
-
-    def __fetch_all_database_tables_in_list(self, database_name, schema_and_table_name_list):
-        schema_and_table_name_tuple_list = [
-            (schema_and_table.split('|')[0], schema_and_table.split('|')[1])
-            for schema_and_table in schema_and_table_name_list
-        ]
-        db_tables = [
-            self.__fetch_single_database_table(database_name, schema_and_table_tuple[0], schema_and_table_tuple[1])
-            for schema_and_table_tuple in schema_and_table_name_tuple_list
-        ]
-        return [table.id for table in db_tables if table is not None]
-
-    def __fetch_single_database_table(self, database_name, schema, table_name):
-        from superset.models.core import Database
-        from superset.connectors.sqla.models import SqlaTable
-
-        database = db.session.query(Database).filter_by(database_name=database_name).first()
-        if not database:
-            logger.warning(f'Database {database_name} does not exist')
-            return None
-
-        table = (
-            db.session.query(SqlaTable)
-            .filter_by(
-                table_name=table_name,
-                schema=schema,
-                database_id=database.id
-            ).first()
-        )
-        if not table:
-            logger.warning(f'Table {table_name} does not exist in schema {schema} of database {database_name}')
-            return None
-        return table
