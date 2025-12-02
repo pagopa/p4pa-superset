@@ -9,7 +9,8 @@ from flask_appbuilder.security.views import AuthDBView
 from flask_appbuilder.security.views import expose
 from flask_login import login_user
 from flask import request, redirect
-from role_and_permission_manager import RoleAndPermissionManager
+from configs.role_and_permission_manager import RoleAndPermissionManager
+from configs.dto.pu_user_info_dto import PUUserInfo
 
 USERINFO_URL = os.environ.get('AUTH_BASE_URL') + "/oauth/userinfo"
 logger = logging.getLogger(__name__)
@@ -54,22 +55,20 @@ class CustomAuthView(AuthDBView):
                 response.raise_for_status()
                 user_data = response.json()
                 user_identifier = user_data.get('mappedExternalUserId')
-                organization_id = user_data.get('resource').get('organization').get('organizationId')
                 if user_identifier:
                     sm = self.appbuilder.sm
                     user = sm.find_user(username=user_identifier)
                     if not user and sm.auth_user_registration:
                         first_name = user_data.get('name')
                         last_name =  user_data.get('familyName')
-                        email = ''
+                        email = user_data.get('resource').get('organization').get('email')
                         role = sm.find_role(sm.auth_user_registration_role)
                         user = sm.add_user(user_identifier, first_name, last_name, email, role)
                     if user:
                         self.role_and_permission_manager.manage_user_roles_and_permissions(
                             self.appbuilder.sm,
-                            user_identifier,
                             user,
-                            organization_id,
+                            PUUserInfo.build_pu_user_info(user_data),
                             headers
                         )
                         login_user(user, remember=False)
