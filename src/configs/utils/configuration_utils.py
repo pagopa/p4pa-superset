@@ -1,4 +1,3 @@
-import os
 from configs.utils.constant_utils import ConstantUtils
 
 class ConfigurationUtils:
@@ -6,6 +5,8 @@ class ConfigurationUtils:
     __OPERATOR_DATASOURCE_ACCESS_PERMISSION_LIST = ["v_assessment_classified"]
     __ORGANIZATION_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST = []
     __BROKER_ADMIN_DATASOURCE_ACCESS_PERMISSION_LIST = []
+
+    __ORG_ID_AND_DP_TYPE_ORG_ID_RLS_APPLY_TO_DATASOURCE_LIST = ["debt_position_type_orgs"]
 
     __pu_superset_roles = [
         ConstantUtils.getSupersetDefaultRoleName(),
@@ -17,6 +18,12 @@ class ConfigurationUtils:
     @staticmethod
     def getPUSupersetRoleList():
         return ConfigurationUtils.__pu_superset_roles
+
+    @staticmethod
+    def getOrgIdAndDebtPositionTypeOrgIdRLSApplyToDatasourceList():
+        return set(
+            ConfigurationUtils.__ORG_ID_AND_DP_TYPE_ORG_ID_RLS_APPLY_TO_DATASOURCE_LIST
+        )
 
     @staticmethod
     def getAllDatasourceNameList():

@@ -1,5 +1,4 @@
 import logging
-import os
 from superset.security import SupersetSecurityManager
 from configs.rls_manager import RlsManager
 from configs.dto.pu_user_info_dto import PUUserInfo
@@ -23,7 +22,7 @@ class RoleAndPermissionManager:
         logged_user_role = ConstantUtils.getSupersetRolePrefix() + pu_user_info.id
         self.__create_and_assign_role_to_user(sm, logged_user_role, user)
         self.__assign_datasource_permissions_to_user(sm, pu_user_info, user)
-        self.rls_manager.upsert_rls(sm, pu_user_info, http_headers)
+        self.rls_manager.upsert_all_rls(sm, pu_user_info, http_headers)
 
     def __create_and_assign_role_to_user(self, sm: SupersetSecurityManager, superset_role, user):
         role = sm.add_role(superset_role)

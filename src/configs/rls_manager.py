@@ -1,5 +1,4 @@
 import logging
-import os
 from superset.security import SupersetSecurityManager
 from configs.dto.pu_user_info_dto import PUUserInfo
 from configs.utils.db_utils import SupersetDatabaseUtils
@@ -7,6 +6,7 @@ from configs.utils.configuration_utils import ConfigurationUtils
 from configs.utils.constant_utils import ConstantUtils
 from configs.utils.superset_resource_utils import SupersetResourceUtils
 from configs.connector.debt_position_connector import DebtPositionConnector
+from configs.rls_builder.rls_builders import RlsBuilderUtils
 
 DEBT_POSITIONS_TYPE_ORG_URL = ConstantUtils.getDebtPositionsTypeOrgURL()
 
@@ -16,35 +16,24 @@ ANALYTICS_DB_SCHEMA_NAME = ConstantUtils.getAnalyticsDbSchemaName()
 logger = logging.getLogger(__name__)
 
 class RlsManager:
+    def upsert_all_rls(self, sm: SupersetSecurityManager, pu_user_info: PUUserInfo, http_headers: dict):
+        for rls_builder in RlsBuilderUtils.getRlsBuilderList():
+            self.__upsert_rls(
+                sm, pu_user_info,
+                rls_builder.build_rls_name(pu_user_info.id),
+                rls_builder.build_rls_group(), # RLS with the same group key will be ORed together, while different RLS groups will be ANDed together. Undefined group keys are treated as unique groups
+                rls_builder.build_rls_clause(pu_user_info, http_headers),
+                rls_builder.get_apply_to_datasource_list()
+            )
 
-    def upsert_rls(self, sm: SupersetSecurityManager, pu_user_info: PUUserInfo, http_headers: dict):
-        self.__upsert_org_id_and_debt_position_type_org_ids_rls(
-            sm,
-            pu_user_info.id,
-            pu_user_info.organization_id,
-            http_headers,
-            ConfigurationUtils.getAllDatasourceNameList()
-        )
-
-    def __upsert_org_id_and_debt_position_type_org_ids_rls(self, sm: SupersetSecurityManager, user_identifier,
-                                                           organization_id, http_headers: dict, datasource_name_list: list):
-
-        rls_name = ConstantUtils.getSupersetRLSPrefix() + user_identifier
-        rls_group = "dpTypeOrg"
-        logger.info(f'Building {rls_name} RLS clause')
-        rls_clause = self.__build_org_id_and_dp_type_orgs_id_rls_clause(user_identifier, organization_id, http_headers)
-
+    def __upsert_rls(self, sm: SupersetSecurityManager, pu_user_info: PUUserInfo,
+                     rls_name, rls_group, rls_clause, datasource_name_list: list):
         logger.info(f'Fetching RLS {rls_name}')
         rls = SupersetDatabaseUtils.fetch_row_level_security(rls_name)
         if rls:
-            self.__update_rls(sm, rls.id, rls_clause, rls_name, user_identifier, datasource_name_list)
+            self.__update_rls(sm, rls.id, rls_clause, rls_name, pu_user_info.id, datasource_name_list)
             return
-
-        self.__create_regular_rls(sm, rls_group, rls_clause, rls_name, user_identifier, datasource_name_list)
-
-    def __build_org_id_and_dp_type_orgs_id_rls_clause(self, user_identifier, organization_id, http_headers: dict):
-        debt_position_type_org_ids = DebtPositionConnector.fetch_dept_position_type_org_ids(user_identifier, organization_id, http_headers)
-        return SupersetResourceUtils.build_rls_for_org_id_and_debt_position_type_org_id(organization_id, debt_position_type_org_ids)
+        self.__create_regular_rls(sm, rls_group, rls_clause, rls_name, pu_user_info.id, datasource_name_list)
 
     def __update_rls(self, sm: SupersetSecurityManager, rls_id, rls_clause, rls_name, user_identifier, datasource_name_list):
         from superset.commands.security.update import UpdateRLSRuleCommand
