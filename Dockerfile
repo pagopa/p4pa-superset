@@ -11,6 +11,9 @@ ARG IMAGE_SHA="f639b5fd21832e6d012b0bf0c0111c0df33c5b751f6c8952037f1e0b2480e32d"
 # 🌍 Timezone Configuration
 ARG TZ="Europe/Rome"
 
+# Build the translations into the image
+ARG BUILD_TRANSLATIONS="true"
+
 #
 # 📥 Base Setup Stage
 #
