@@ -67,8 +67,8 @@ FROM dependencies AS build
 # Copy configs
 COPY --chown=superset:superset src/configs /app/configs
 
-# Copy static assets
-COPY --chown=superset:superset src/static /app/superset/static
+# Copy superset assets
+COPY --chown=superset:superset src/superset /app/superset
 
 #
 # 🚀 Runtime Stage
