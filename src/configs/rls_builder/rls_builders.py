@@ -1,13 +1,20 @@
 from configs.dto.pu_user_info_dto import PUUserInfo
-from configs.utils.configuration_utils import ConfigurationUtils
-from configs.utils.constant_utils import ConstantUtils
+from configs.utils.db_utils import DatasourceEnum
+from configs.utils.permission_utils import PermissionUtils
+from configs.utils.constant_utils import SupersetResourcePrefixConstants
 from configs.utils.superset_resource_utils import SupersetResourceUtils
 from configs.connector.debt_position_connector import DebtPositionConnector
 
 class RlsBuilderInterface:
+    def has_to_be_applied_to_user(self, pu_user_info: PUUserInfo) -> bool:
+        """If this RLS filter should be applied to logging user"""
+        if len(self.get_apply_to_datasource_set(pu_user_info)) > 0:
+            return True
+        else:
+            return False
 
-    def get_apply_to_datasource_list(self) -> list:
-        """Get list of tables to which apply this RLS filter"""
+    def get_apply_to_datasource_set(self, pu_user_info: PUUserInfo) -> set:
+        """Get list of datasource to which apply this RLS filter"""
         pass
 
     def build_rls_name(self, user_identifier: str):
@@ -23,24 +30,17 @@ class RlsBuilderInterface:
         pass
 
 class OrgIdAndDebtPositionTypeOrgIdRlsBuilder(RlsBuilderInterface):
-    def get_apply_to_datasource_list(self) -> list:
-        return ConfigurationUtils.getOrgIdAndDebtPositionTypeOrgIdRLSApplyToDatasourceList()
+    def get_apply_to_datasource_set(self, pu_user_info: PUUserInfo) -> set:
+        __org_id_and_dp_type_org_id_rls_apply_to_datasource_set: set[str] = {
+            DatasourceEnum.ASSESSMENT_CLASSIFIED
+        }
+        return (
+            __org_id_and_dp_type_org_id_rls_apply_to_datasource_set
+            .intersection(PermissionUtils.getUserRoleDatasourcePermissionSet(pu_user_info))
+        )
 
     def build_rls_name(self, user_identifier: str):
-        return ConstantUtils.getSupersetRLSPrefix() + "orgIdAndDPTypeOrg_" + user_identifier
-
-    def build_rls_group(self):
-        return "orgIdAndDPTypeOrg"
-
-    def build_rls_clause(self, pu_user_info: PUUserInfo, http_headers: dict):
-        return "1=1"
-
-class AlwaysTrueRlsBuilder(RlsBuilderInterface):
-    def get_apply_to_datasource_list(self) -> list:
-        return ConfigurationUtils.getOrgIdAndDebtPositionTypeOrgIdRLSApplyToDatasourceList()
-
-    def build_rls_name(self, user_identifier: str):
-        return ConstantUtils.getSupersetRLSPrefix() + "always_true_" + user_identifier
+        return SupersetResourcePrefixConstants.getSupersetRLSPrefix() + "orgIdAndDPTypeOrg_" + user_identifier
 
     def build_rls_group(self):
         return "orgIdAndDPTypeOrg"
@@ -54,11 +54,10 @@ class AlwaysTrueRlsBuilder(RlsBuilderInterface):
         )
 
 class RlsBuilderUtils:
-    __RLS_BUILDER_LIST: list[RlsBuilderInterface] = [
-        OrgIdAndDebtPositionTypeOrgIdRlsBuilder(),
-        AlwaysTrueRlsBuilder()
-    ]
+    __RLS_BUILDER_SET: set[RlsBuilderInterface] = {
+        OrgIdAndDebtPositionTypeOrgIdRlsBuilder()
+    }
 
     @staticmethod
-    def getRlsBuilderList() -> list[RlsBuilderInterface]:
-        return RlsBuilderUtils.__RLS_BUILDER_LIST
+    def getRlsBuilderList() -> set[RlsBuilderInterface]:
+        return RlsBuilderUtils.__RLS_BUILDER_SET

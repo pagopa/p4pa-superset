@@ -3,13 +3,13 @@ from superset.security import SupersetSecurityManager
 from configs.rls_manager import RlsManager
 from configs.dto.pu_user_info_dto import PUUserInfo
 from configs.utils.db_utils import SupersetDatabaseUtils
-from configs.utils.configuration_utils import ConfigurationUtils
-from configs.utils.constant_utils import ConstantUtils
+from configs.utils.permission_utils import PermissionUtils
+from configs.utils.constant_utils import DBConstants, SupersetResourcePrefixConstants
 from configs.utils.superset_resource_utils import SupersetResourceUtils
-from configs.utils.pu_role_utils import PURoleUtils
+from configs.utils.role_utils import SupersetRoleUtils
 
-ANALYTICS_DB_NAME = ConstantUtils.getAnalyticsDbName()
-ANALYTICS_DB_SCHEMA_NAME = ConstantUtils.getAnalyticsDbSchemaName()
+ANALYTICS_DB_NAME = DBConstants.getAnalyticsDbName()
+ANALYTICS_DB_SCHEMA_NAME = DBConstants.getAnalyticsDbSchemaName()
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +18,8 @@ class RoleAndPermissionManager:
         self.rls_manager = RlsManager()
 
     def manage_user_roles_and_permissions(self, sm: SupersetSecurityManager, user, pu_user_info: PUUserInfo, http_headers):
-        user.roles = [role for role in user.roles if role.name not in ConfigurationUtils.getPUSupersetRoleList()] #removing previous logged role for granting correct permissions
-        logged_user_role = ConstantUtils.getSupersetRolePrefix() + pu_user_info.id
+        user.roles = [role for role in user.roles if role.name not in SupersetRoleUtils.getSupersetRoleSet()] #removing previous logged role for granting correct permissions
+        logged_user_role = SupersetResourcePrefixConstants.getSupersetRolePrefix() + pu_user_info.id
         self.__create_and_assign_role_to_user(sm, logged_user_role, user)
         self.__assign_datasource_permissions_to_user(sm, pu_user_info, user)
         self.rls_manager.upsert_all_rls(sm, pu_user_info, http_headers)
@@ -37,18 +37,8 @@ class RoleAndPermissionManager:
             logger.info(f'Assigned role {role} to user {user.username}')
 
     def __assign_datasource_permissions_to_user(self, sm: SupersetSecurityManager, pu_user_info: PUUserInfo, user):
-        if PURoleUtils.is_operator(pu_user_info):
-            role = self.__create_and_assign_role_to_user(sm, ConstantUtils.getSupersetOperatorRoleName(), user)
-            self.__assign_datasource_permissions_to_role(sm, ConfigurationUtils.getOperatorDatasourceNameList(), role)
-        elif PURoleUtils.is_organization_admin(pu_user_info):
-            role = self.__create_and_assign_role_to_user(sm, ConstantUtils.getSupersetOrganizationAdminRoleName(), user)
-            self.__assign_datasource_permissions_to_role(sm, ConfigurationUtils.getOrganizationAdminDatasourceNameList(), role)
-        elif PURoleUtils.is_broker_admin(pu_user_info):
-            role = self.__create_and_assign_role_to_user(sm, ConstantUtils.getSupersetBrokerAdminRoleName(), user)
-            self.__assign_datasource_permissions_to_role(sm, ConfigurationUtils.getBrokerAdminDatasourceNameList(), role)
-        else:
-            role = self.__create_and_assign_role_to_user(sm, ConstantUtils.getSupersetDefaultRoleName(), user)
-            self.__assign_datasource_permissions_to_role(sm, ConfigurationUtils.getDefaultDatasourceNameList(), role)
+        role = self.__create_and_assign_role_to_user(sm, SupersetRoleUtils.get_user_role(pu_user_info), user)
+        self.__assign_datasource_permissions_to_role(sm, PermissionUtils.getUserRoleDatasourcePermissionSet(pu_user_info), role)
 
     def __assign_datasource_permissions_to_role(self, sm: SupersetSecurityManager, datasource_name_list, role):
         view_menu_name_list = []

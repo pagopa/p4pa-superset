@@ -1,7 +1,11 @@
 from superset import db
 import logging
+from enum import Enum
 
 logger = logging.getLogger(__name__)
+
+class DatasourceEnum(str, Enum):
+    ASSESSMENT_CLASSIFIED = "v_assessment_classified"
 
 class SupersetDatabaseUtils:
     @staticmethod

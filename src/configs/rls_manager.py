@@ -2,29 +2,31 @@ import logging
 from superset.security import SupersetSecurityManager
 from configs.dto.pu_user_info_dto import PUUserInfo
 from configs.utils.db_utils import SupersetDatabaseUtils
-from configs.utils.configuration_utils import ConfigurationUtils
-from configs.utils.constant_utils import ConstantUtils
+from configs.utils.constant_utils import ConnectorConstants, DBConstants, SupersetResourcePrefixConstants
 from configs.utils.superset_resource_utils import SupersetResourceUtils
 from configs.connector.debt_position_connector import DebtPositionConnector
 from configs.rls_builder.rls_builders import RlsBuilderUtils
 
-DEBT_POSITIONS_TYPE_ORG_URL = ConstantUtils.getDebtPositionsTypeOrgURL()
+DEBT_POSITIONS_TYPE_ORG_URL = ConnectorConstants.getDebtPositionsTypeOrgURL()
 
-ANALYTICS_DB_NAME = ConstantUtils.getAnalyticsDbName()
-ANALYTICS_DB_SCHEMA_NAME = ConstantUtils.getAnalyticsDbSchemaName()
+ANALYTICS_DB_NAME = DBConstants.getAnalyticsDbName()
+ANALYTICS_DB_SCHEMA_NAME = DBConstants.getAnalyticsDbSchemaName()
 
 logger = logging.getLogger(__name__)
 
 class RlsManager:
     def upsert_all_rls(self, sm: SupersetSecurityManager, pu_user_info: PUUserInfo, http_headers: dict):
         for rls_builder in RlsBuilderUtils.getRlsBuilderList():
-            self.__upsert_rls(
-                sm, pu_user_info,
-                rls_builder.build_rls_name(pu_user_info.id),
-                rls_builder.build_rls_group(), # RLS with the same group key will be ORed together, while different RLS groups will be ANDed together. Undefined group keys are treated as unique groups
-                rls_builder.build_rls_clause(pu_user_info, http_headers),
-                rls_builder.get_apply_to_datasource_list()
-            )
+            if rls_builder.has_to_be_applied_to_user(pu_user_info):
+                self.__upsert_rls(
+                    sm, pu_user_info,
+                    rls_builder.build_rls_name(pu_user_info.id),
+                    rls_builder.build_rls_group(), # RLS with the same group key will be ORed together, while different RLS groups will be ANDed together
+                    rls_builder.build_rls_clause(pu_user_info, http_headers),
+                    rls_builder.get_apply_to_datasource_set(pu_user_info)
+                )
+            else:
+                self.__delete_rls(rls_builder.build_rls_name(pu_user_info.id))
 
     def __upsert_rls(self, sm: SupersetSecurityManager, pu_user_info: PUUserInfo,
                      rls_name, rls_group, rls_clause, datasource_name_list: list):
@@ -42,7 +44,7 @@ class RlsManager:
         updated_rls = {
             "clause": rls_clause,
             "roles": [
-                sm.find_role(ConstantUtils.getSupersetRolePrefix() + user_identifier).id
+                sm.find_role(SupersetResourcePrefixConstants.getSupersetRolePrefix() + user_identifier).id
             ],
             "tables": SupersetDatabaseUtils.fetch_all_datasource_id_in_list(ANALYTICS_DB_NAME, ANALYTICS_DB_SCHEMA_NAME, datasource_name_list)
         }
@@ -63,7 +65,7 @@ class RlsManager:
             "clause": rls_clause,
             "group_key": rls_group,
             "roles": [
-                sm.find_role(ConstantUtils.getSupersetRolePrefix() + user_identifier).id
+                sm.find_role(SupersetResourcePrefixConstants.getSupersetRolePrefix() + user_identifier).id
             ],
             "tables": SupersetDatabaseUtils.fetch_all_datasource_id_in_list(ANALYTICS_DB_NAME, ANALYTICS_DB_SCHEMA_NAME, datasource_name_list)
         }
@@ -73,3 +75,20 @@ class RlsManager:
             logger.error(f"Error creating RLS rule {rls_name}: {str(ex)}")
             raise ex
         logger.info(f'Created RLS {rls_name}')
+
+    def __delete_rls(self, rls_name):
+        from superset.commands.security.delete import DeleteRLSRuleCommand
+
+        logger.info(f'Fetching RLS {rls_name}')
+        rls = SupersetDatabaseUtils.fetch_row_level_security(rls_name)
+        if not rls:
+            logger.info(f'RLS {rls_name} nof found')
+            return
+        logger.info(f'Deleting existing RLS {rls_name}')
+        try:
+            DeleteRLSRuleCommand([rls.id]).run()
+        except Exception as ex:
+            logger.error(f"Error deleting RLS rule {rls_name}: {str(ex)}")
+            raise ex
+        logger.info(f'Deleted RLS {rls_name}')
+        return

@@ -1,6 +1,6 @@
 import logging
 import requests
-from configs.utils.constant_utils import ConstantUtils
+from configs.utils.constant_utils import ConnectorConstants
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ class DebtPositionConnector:
     def __fetch_dept_position_type_orgs(user_identifier, organization_id, http_headers: dict):
         query_params_dict = {"operatorExternalUserId": user_identifier, "organizationId": organization_id}
         response = requests.get(
-            ConstantUtils.getDebtPositionsTypeOrgURL(),
+            ConnectorConstants.getDebtPositionsTypeOrgURL(),
             params=query_params_dict,
             headers=http_headers,
             timeout=5
