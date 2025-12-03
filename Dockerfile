@@ -22,10 +22,6 @@ USER root
 # Set timezone environment variable
 ENV TZ=${TZ}
 
-# Build the translations into the image
-ARG BUILD_TRANSLATIONS=true
-ENV BUILD_TRANSLATIONS=${BUILD_TRANSLATIONS}
-
 # Install base packages
 RUN apt-get update && \
     apt-get upgrade -y && \
