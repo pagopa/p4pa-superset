@@ -33,7 +33,7 @@ class RlsManager:
         logger.info(f"Assigned to user {pu_user_info.id} following RLS: {rls_name_list}")
 
     def __upsert_rls(self, sm: SupersetSecurityManager, pu_user_info: PUUserInfo,
-                     rls_name, rls_group, rls_clause, datasource_name_set: list):
+                     rls_name, rls_group, rls_clause, datasource_name_set):
         logger.debug(f'Fetching RLS {rls_name}')
         rls = SupersetDatabaseUtils.fetch_row_level_security(rls_name)
         if rls:
