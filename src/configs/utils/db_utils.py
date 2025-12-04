@@ -5,7 +5,7 @@ from enum import Enum
 logger = logging.getLogger(__name__)
 
 class DatasourceEnum(str, Enum):
-    ASSESSMENT_CLASSIFIED = "v_assessment_classified"
+    ASSESSMENT_CLASSIFICATION = "v_assessment_classified"
 
 class SupersetDatabaseUtils:
     @staticmethod
@@ -25,7 +25,7 @@ class SupersetDatabaseUtils:
 
         database = db.session.query(Database).filter_by(database_name=database_name).first()
         if not database:
-            logger.warning(f'Database {database_name} does not exist')
+            logger.warning(f'Database {database_name} not found')
             return None
 
         datasource = (
@@ -37,14 +37,14 @@ class SupersetDatabaseUtils:
             ).first()
         )
         if not datasource:
-            logger.warning(f'Datasource {datasource_name} does not exist in schema {schema} of database {database_name}')
+            logger.warning(f'Datasource {datasource_name} not found in schema {schema} of database {database_name}')
             return None
         return datasource
 
     @staticmethod
-    def fetch_all_datasource_id_in_list(analytics_db_name, analytics_db_schema_name, datasource_name_list):
+    def fetch_all_datasource_id_in_set(analytics_db_name, analytics_db_schema_name, datasource_name_set):
         datasource_list = [
             SupersetDatabaseUtils.fetch_superset_datasource(analytics_db_name, analytics_db_schema_name, datasource_name)
-            for datasource_name in datasource_name_list
+            for datasource_name in datasource_name_set
         ]
         return [datasource.id for datasource in datasource_list if datasource is not None]

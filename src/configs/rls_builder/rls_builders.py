@@ -22,7 +22,9 @@ class RlsBuilderInterface:
         pass
 
     def build_rls_group(self):
-        """Build filter group for this RLS filter"""
+        """Build filter group for this RLS filter\n
+        RLS with the same group key will be ORed together, while different RLS groups will be ANDed together
+        """
         pass
 
     def build_rls_clause(self, pu_user_info: PUUserInfo, http_headers: dict) -> str:
@@ -32,7 +34,7 @@ class RlsBuilderInterface:
 class OrgIdAndDebtPositionTypeOrgIdRlsBuilder(RlsBuilderInterface):
     def get_apply_to_datasource_set(self, pu_user_info: PUUserInfo) -> set:
         __org_id_and_dp_type_org_id_rls_apply_to_datasource_set: set[str] = {
-            DatasourceEnum.ASSESSMENT_CLASSIFIED
+            DatasourceEnum.ASSESSMENT_CLASSIFICATION
         }
         return (
             __org_id_and_dp_type_org_id_rls_apply_to_datasource_set
@@ -43,6 +45,7 @@ class OrgIdAndDebtPositionTypeOrgIdRlsBuilder(RlsBuilderInterface):
         return SupersetResourcePrefixConstants.getSupersetRLSPrefix() + "orgIdAndDPTypeOrg_" + user_identifier
 
     def build_rls_group(self):
+        # RLS with the same group key will be ORed together, while different RLS groups will be ANDed together
         return "orgIdAndDPTypeOrg"
 
     def build_rls_clause(self, pu_user_info: PUUserInfo, http_headers: dict):

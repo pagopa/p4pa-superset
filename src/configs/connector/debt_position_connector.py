@@ -8,7 +8,7 @@ class DebtPositionConnector:
 
     @staticmethod
     def fetch_dept_position_type_org_ids(user_identifier, organization_id, http_headers: dict):
-        logger.info(f'Fetching DebtPositionTypeOrgs for user {user_identifier} and org {organization_id}')
+        logger.debug(f'Fetching DebtPositionTypeOrgs for user {user_identifier} and org {organization_id}')
         dp_type_org_data = DebtPositionConnector.__fetch_dept_position_type_orgs(user_identifier, organization_id, http_headers)
         return DebtPositionConnector.__build_debt_position_type_ids_string(dp_type_org_data)
 

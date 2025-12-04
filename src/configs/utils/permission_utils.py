@@ -5,9 +5,9 @@ from configs.dto.pu_user_info_dto import PUUserInfo
 
 class PermissionUtils:
     __DEFAULT_DATASOURCE_ACCESS_PERMISSION_SET: set[str] = {}
-    __OPERATOR_DATASOURCE_ACCESS_PERMISSION_SET: set[str] = {DatasourceEnum.ASSESSMENT_CLASSIFIED}
-    __ORGANIZATION_ADMIN_DATASOURCE_ACCESS_PERMISSION_SET: set[str] = {DatasourceEnum.ASSESSMENT_CLASSIFIED}
-    __BROKER_ADMIN_DATASOURCE_ACCESS_PERMISSION_SET: set[str] = {DatasourceEnum.ASSESSMENT_CLASSIFIED}
+    __OPERATOR_DATASOURCE_ACCESS_PERMISSION_SET: set[str] = {DatasourceEnum.ASSESSMENT_CLASSIFICATION}
+    __ORGANIZATION_ADMIN_DATASOURCE_ACCESS_PERMISSION_SET: set[str] = {DatasourceEnum.ASSESSMENT_CLASSIFICATION}
+    __BROKER_ADMIN_DATASOURCE_ACCESS_PERMISSION_SET: set[str] = {DatasourceEnum.ASSESSMENT_CLASSIFICATION}
 
     @staticmethod
     def getUserRoleDatasourcePermissionSet(pu_user_info: PUUserInfo) -> set[str]:
