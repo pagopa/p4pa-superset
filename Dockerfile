@@ -5,8 +5,8 @@
 #
 ARG IMAGE="apachesuperset.docker.scarf.sh/apache/superset"
 # using RC version in order to be able to use a context path different from / (SUPERSET_APP_ROOT env var)
-ARG IMAGE_VERSION="6.0.0rc3"
-ARG IMAGE_SHA="f639b5fd21832e6d012b0bf0c0111c0df33c5b751f6c8952037f1e0b2480e32d"
+ARG IMAGE_VERSION="6.0.0rc4"
+ARG IMAGE_SHA="efc7abe355b51374a2b7330a3ee652cd020f3fe7388a49c53f39fab78427712c"
 
 # 🌍 Timezone Configuration
 ARG TZ="Europe/Rome"
