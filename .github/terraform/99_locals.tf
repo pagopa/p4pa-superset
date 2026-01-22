@@ -21,6 +21,7 @@ locals {
     SONAR_TOKEN = data.azurerm_key_vault_secret.sonar_token[0].value
     ADMIN_GITHUB_TOKEN_RW = data.azurerm_key_vault_secret.github_token[0].value
     SLACK_WEBHOOK_URL = data.azurerm_key_vault_secret.slack_webhook[0].value
+    AZURE_DEVOPS_TOKEN = data.azurerm_key_vault_secret.azure_devops_token[0].value
   } : {}
 
   repo_env = var.env_short == "p" ? {
