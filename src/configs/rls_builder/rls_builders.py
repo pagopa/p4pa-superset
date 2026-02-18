@@ -56,9 +56,33 @@ class OrgIdAndDebtPositionTypeOrgIdRlsBuilder(RlsBuilderInterface):
             pu_user_info.organization_id, debt_position_type_org_ids
         )
 
+class OrgIdRlsBuilder(RlsBuilderInterface):
+    def get_apply_to_datasource_set(self, pu_user_info: PUUserInfo) -> set:
+        __org_id_rls_apply_to_datasource_set: set[str] = {
+            DatasourceEnum.ACCESS_MONITORING,
+            DatasourceEnum.FLOW_FILE_MONITORING
+        }
+        return (
+            __org_id_rls_apply_to_datasource_set
+            .intersection(PermissionUtils.getUserRoleDatasourcePermissionSet(pu_user_info))
+        )
+
+    def build_rls_name(self, user_identifier: str):
+        return SupersetResourcePrefixConstants.getSupersetRLSPrefix() + "orgId_" + user_identifier
+
+    def build_rls_group(self):
+        # RLS with the same group key will be ORed together, while different RLS groups will be ANDed together
+        return "orgId"
+
+    def build_rls_clause(self, pu_user_info: PUUserInfo, http_headers: dict):
+        return SupersetResourceUtils.build_rls_for_org_id(
+            pu_user_info.organization_id
+        )
+
 class RlsBuilderUtils:
     __RLS_BUILDER_SET: set[RlsBuilderInterface] = {
-        OrgIdAndDebtPositionTypeOrgIdRlsBuilder()
+        OrgIdAndDebtPositionTypeOrgIdRlsBuilder(),
+        OrgIdRlsBuilder()
     }
 
     @staticmethod
