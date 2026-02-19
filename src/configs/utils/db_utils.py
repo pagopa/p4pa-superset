@@ -6,6 +6,8 @@ logger = logging.getLogger(__name__)
 
 class DatasourceEnum(str, Enum):
     ASSESSMENT_CLASSIFICATION = "v_assessment_classified"
+    ACCESS_MONITORING = "v_access_monitoring"
+    FLOW_FILE_MONITORING = "v_flow_file_monitoring"
 
 class SupersetDatabaseUtils:
     @staticmethod
