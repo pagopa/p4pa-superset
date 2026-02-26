@@ -13,3 +13,7 @@ class SupersetResourceUtils:
     @staticmethod
     def build_rls_for_org_id_and_debt_position_type_org_id(organization_id, debt_position_type_org_ids_string):
         return f"organization_id = '{organization_id}' and debt_position_type_org_id in ({debt_position_type_org_ids_string})"
+
+    @staticmethod
+    def build_rls_for_org_id(organization_id):
+        return f"organization_id = '{organization_id}'"
