@@ -70,7 +70,7 @@ def inject_password_into_zip(zip_path: str) -> bytes:
     YAML's sqlalchemy_uri with the target DB password (from DB_PASS),
     and returns the patched ZIP as bytes.
     """
-    db_pass = os.getenv("DB_PASS")
+    db_pass = os.getenv("ANALYTICS_DB_PASSWORD")
     if not db_pass:
         logger.error("Environment variable DB_PASS is missing.")
         sys.exit(1)

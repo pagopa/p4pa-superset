@@ -5,7 +5,7 @@ if [ "$#" -ge 4 ]; then
     export SUPERSET_URL="$1"
     export SUPERSET_USER="$2"
     export SUPERSET_PASSWORD="$3"
-    export DB_PASS="$4"
+    export ANALYTICS_DB_PASSWORD="$4"
 fi
 
 if [ "$#" -ge 5 ]; then
@@ -17,7 +17,7 @@ function print_help() {
     echo "1. SUPERSET_URL"
     echo "2. SUPERSET_USER"
     echo "3. SUPERSET_PASSWORD"
-    echo "4. DB_PASS"
+    echo "4. ANALYTICS_DB_PASSWORD"
     echo ""
 }
 
@@ -32,7 +32,7 @@ function checkEnv() {
 checkEnv SUPERSET_URL
 checkEnv SUPERSET_USER
 checkEnv SUPERSET_PASSWORD
-checkEnv DB_PASS
+checkEnv ANALYTICS_DB_PASSWORD
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PY_SCRIPT="$SCRIPT_DIR/import.py"
