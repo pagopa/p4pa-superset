@@ -65,3 +65,18 @@ Ensure the following tools are installed on your machine:
 docker build -t <APP_NAME> .
 docker run --env-file <ENV_FILE> <APP_NAME>
 ```
+
+## 📜 Scripts
+
+| ENV                 | DESCRIPTION                                            | DEFAULT |
+|---------------------|--------------------------------------------------------|---------|
+| SUPERSET_URL        | Superset instance URL                                  |         |
+| SUPERSET_USER       | Superset username for authentication                   |         |
+| SUPERSET_PASSWORD   | Superset password for authentication                   |         |
+| DB_PASS             | Target PostgreSQL database password (`import.py` only) |         |
+
+
+Two utility scripts are provided in `src/scripts` to manage Superset assets:
+
+* **export.py**: Exports all Superset assets into a single ZIP file (`superset_full_export.zip`) and extracts its content for tracking changes.
+* **import.py**: Imports the assets from the zip file to the target environment.
