@@ -68,10 +68,10 @@ docker run --env-file <ENV_FILE> <APP_NAME>
 
 ## 📜 Scripts
 
-Two utility scripts are provided in `src/scripts` to manage Superset assets migration:
+Two utility scripts are provided in `scripts/` to manage Superset assets migration:
 
-* **export.py** / **run_export.sh**: Exports all Superset assets into the `exports/superset_full_export/` folder
-* **import.py** / **run_import.sh**: Patches the database credentials in the exported YAML files and imports the assets into the target Superset environment.
+* **export/export.py** / **run_export.sh**: Exports all Superset assets into the `manifests/superset_full_export/` folder.
+* **import/import.py** / **run_import.sh**: Patches the database credentials in the exported YAML files and imports the assets into the target Superset environment.
 
 ### `run_export.sh` — environment variables
 
