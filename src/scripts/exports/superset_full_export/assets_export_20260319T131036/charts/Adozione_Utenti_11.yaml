@@ -1,0 +1,94 @@
+slice_name: Adozione Utenti
+description: null
+certified_by: null
+certification_details: null
+viz_type: pie
+params:
+  datasource: 2__table
+  viz_type: pie
+  groupby:
+  - operator_category
+  metric:
+    expressionType: SIMPLE
+    column:
+      advanced_data_type: null
+      certification_details: null
+      certified_by: null
+      column_name: fct_flow_file_pk
+      description: null
+      expression: null
+      filterable: true
+      groupby: true
+      id: 20
+      is_certified: false
+      is_dttm: false
+      python_date_format: null
+      type: TEXT
+      type_generic: 1
+      uuid: 2df5b3a8-6bca-4751-932c-4ed9751629d5
+      verbose_name: null
+      warning_markdown: null
+    aggregate: COUNT
+    sqlExpression: null
+    datasourceWarning: false
+    hasCustomLabel: false
+    label: COUNT(fct_flow_file_pk)
+    optionName: metric_wj4ah1uk8tc_orxtgqhrg
+  adhoc_filters:
+  - expressionType: SIMPLE
+    subject: processed_time
+    operator: TEMPORAL_RANGE
+    comparator: No filter
+    clause: WHERE
+    sqlExpression: null
+    isExtra: false
+    isNew: false
+    datasourceWarning: false
+    filterOptionName: filter_xqpsv6yx8h_ozqj9u0sze
+  - expressionType: SIMPLE
+    subject: operator_category
+    operator: IN
+    operatorId: IN
+    comparator:
+    - Automazione (API/System)
+    - Integrazione SIL
+    - Manuale (Operatore)
+    clause: WHERE
+    sqlExpression: null
+    isExtra: false
+    isNew: false
+    datasourceWarning: false
+    filterOptionName: filter_untlwss3fo8_4j8te25lhd
+  row_limit: 10
+  sort_by_metric: true
+  color_scheme: supersetColors
+  show_labels_threshold: 1
+  roseType: null
+  show_legend: true
+  legendType: scroll
+  legendOrientation: top
+  legendMargin: null
+  label_type: key_percent
+  number_format: SMART_NUMBER
+  currency_format:
+    symbolPosition: suffix
+  date_format: smart_date
+  show_labels: true
+  labels_outside: true
+  label_line: true
+  show_total: false
+  outerRadius: 60
+  donut: true
+  innerRadius: 30
+  extra_form_data: {}
+  dashboards:
+  - 1
+query_context: '{"datasource":{"id":2,"type":"table"},"force":false,"queries":[{"filters":[{"col":"processed_time","op":"TEMPORAL_RANGE","val":"No
+  filter"},{"col":"operator_category","op":"IN","val":["Automazione (API/System)","Integrazione
+  SIL","Manuale (Operatore)"]}],"extras":{"having":"","where":""},"applied_time_extras":{},"columns":["operator_category"],"metrics":[{"expressionType":"SIMPLE","column":{"advanced_data_type":null,"certification_details":null,"certified_by":null,"column_name":"fct_flow_file_pk","description":null,"expression":null,"filterable":true,"groupby":true,"id":20,"is_certified":false,"is_dttm":false,"python_date_format":null,"type":"TEXT","type_generic":1,"uuid":"2df5b3a8-6bca-4751-932c-4ed9751629d5","verbose_name":null,"warning_markdown":null},"aggregate":"COUNT","sqlExpression":null,"datasourceWarning":false,"hasCustomLabel":false,"label":"COUNT(fct_flow_file_pk)","optionName":"metric_wj4ah1uk8tc_orxtgqhrg"}],"orderby":[[{"expressionType":"SIMPLE","column":{"advanced_data_type":null,"certification_details":null,"certified_by":null,"column_name":"fct_flow_file_pk","description":null,"expression":null,"filterable":true,"groupby":true,"id":20,"is_certified":false,"is_dttm":false,"python_date_format":null,"type":"TEXT","type_generic":1,"uuid":"2df5b3a8-6bca-4751-932c-4ed9751629d5","verbose_name":null,"warning_markdown":null},"aggregate":"COUNT","sqlExpression":null,"datasourceWarning":false,"hasCustomLabel":false,"label":"COUNT(fct_flow_file_pk)","optionName":"metric_wj4ah1uk8tc_orxtgqhrg"},false]],"annotation_layers":[],"row_limit":10,"series_limit":0,"group_others_when_limit_reached":false,"order_desc":true,"url_params":{},"custom_params":{},"custom_form_data":{},"post_processing":[{"operation":"contribution","options":{"columns":["COUNT(fct_flow_file_pk)"],"rename_columns":["COUNT(fct_flow_file_pk)__contribution"]}}]}],"form_data":{"datasource":"2__table","viz_type":"pie","groupby":["operator_category"],"metric":{"expressionType":"SIMPLE","column":{"advanced_data_type":null,"certification_details":null,"certified_by":null,"column_name":"fct_flow_file_pk","description":null,"expression":null,"filterable":true,"groupby":true,"id":20,"is_certified":false,"is_dttm":false,"python_date_format":null,"type":"TEXT","type_generic":1,"uuid":"2df5b3a8-6bca-4751-932c-4ed9751629d5","verbose_name":null,"warning_markdown":null},"aggregate":"COUNT","sqlExpression":null,"datasourceWarning":false,"hasCustomLabel":false,"label":"COUNT(fct_flow_file_pk)","optionName":"metric_wj4ah1uk8tc_orxtgqhrg"},"adhoc_filters":[{"expressionType":"SIMPLE","subject":"processed_time","operator":"TEMPORAL_RANGE","comparator":"No
+  filter","clause":"WHERE","sqlExpression":null,"isExtra":false,"isNew":false,"datasourceWarning":false,"filterOptionName":"filter_xqpsv6yx8h_ozqj9u0sze"},{"expressionType":"SIMPLE","subject":"operator_category","operator":"IN","operatorId":"IN","comparator":["Automazione
+  (API/System)","Integrazione SIL","Manuale (Operatore)"],"clause":"WHERE","sqlExpression":null,"isExtra":false,"isNew":false,"datasourceWarning":false,"filterOptionName":"filter_untlwss3fo8_4j8te25lhd"}],"row_limit":10,"sort_by_metric":true,"color_scheme":"supersetColors","show_labels_threshold":1,"roseType":null,"show_legend":true,"legendType":"scroll","legendOrientation":"top","legendMargin":null,"label_type":"key_percent","number_format":"SMART_NUMBER","currency_format":{"symbolPosition":"suffix"},"date_format":"smart_date","show_labels":true,"labels_outside":true,"label_line":true,"show_total":false,"outerRadius":60,"donut":true,"innerRadius":30,"extra_form_data":{},"dashboards":[1],"force":false,"result_format":"json","result_type":"full"},"result_format":"json","result_type":"full"}'
+cache_timeout: null
+uuid: 66755bd5-1d00-4064-8b62-6d3694e8d58d
+version: 1.0.0
+dataset_uuid: 44cd6a1f-195d-4811-9d7e-9c511a6f3bfe

@@ -1,0 +1,138 @@
+slice_name: Ripartiti
+description: null
+certified_by: null
+certification_details: null
+viz_type: echarts_timeseries_bar
+params:
+  datasource: 1__table
+  viz_type: echarts_timeseries_bar
+  slice_id: 22
+  x_axis: reference_date_year
+  xAxisForceCategorical: false
+  metrics:
+  - aggregate: SUM
+    column:
+      advanced_data_type: null
+      certification_details: null
+      certified_by: null
+      column_name: amount_paid
+      description: null
+      expression: ''
+      filterable: true
+      groupby: true
+      id: 11
+      is_certified: false
+      is_dttm: false
+      python_date_format: null
+      type: NUMERIC
+      type_generic: 0
+      uuid: cbf01977-1d5a-4374-a45f-4a8951eed851
+      verbose_name: null
+      warning_markdown: null
+    datasourceWarning: false
+    expressionType: SIMPLE
+    hasCustomLabel: true
+    label: Pagati
+    optionName: metric_nt0lom4mghm_fj9a9xkzvcr
+    sqlExpression: null
+  - aggregate: SUM
+    column:
+      advanced_data_type: null
+      certification_details: null
+      certified_by: null
+      column_name: amount_reported
+      description: null
+      expression: ''
+      filterable: true
+      groupby: true
+      id: 12
+      is_certified: false
+      is_dttm: false
+      python_date_format: null
+      type: NUMERIC
+      type_generic: 0
+      uuid: 80947855-c724-4dc1-87c1-c65a5835a4e1
+      verbose_name: null
+      warning_markdown: null
+    datasourceWarning: false
+    expressionType: SIMPLE
+    hasCustomLabel: true
+    label: Rendicontati
+    optionName: metric_yrtandtya2_6o0yvd3af9
+    sqlExpression: null
+  - aggregate: SUM
+    column:
+      advanced_data_type: null
+      certification_details: null
+      certified_by: null
+      column_name: amount_cashed
+      description: null
+      expression: ''
+      filterable: true
+      groupby: true
+      id: 13
+      is_certified: false
+      is_dttm: false
+      python_date_format: null
+      type: NUMERIC
+      type_generic: 0
+      uuid: c34c86c7-c425-4afe-9a64-60c14dfe9d99
+      verbose_name: null
+      warning_markdown: null
+    datasourceWarning: false
+    expressionType: SIMPLE
+    hasCustomLabel: true
+    label: Incassati
+    optionName: metric_1fpfzrojfe4_jwbqhk3lne
+    sqlExpression: null
+  groupby: []
+  contributionMode: null
+  adhoc_filters:
+  - clause: WHERE
+    comparator: No filter
+    expressionType: SIMPLE
+    operator: TEMPORAL_RANGE
+    subject: date_receipt
+  row_limit: 100
+  truncate_metric: true
+  show_empty_columns: false
+  comparison_type: values
+  annotation_layers: []
+  forecastPeriods: 10
+  forecastInterval: 0.8
+  orientation: horizontal
+  x_axis_title_margin: 15
+  y_axis_title_margin: 30
+  y_axis_title_position: Left
+  sort_series_type: min
+  sort_series_ascending: false
+  color_scheme: blueItalia
+  show_value: false
+  stack: Stack
+  zoomable: false
+  show_legend: true
+  legendType: plain
+  legendOrientation: top
+  legendMargin: null
+  x_axis_time_format: smart_date
+  xAxisLabelInterval: auto
+  y_axis_format: $,.2f
+  y_axis_bounds:
+  - null
+  - null
+  truncateXAxis: true
+  rich_tooltip: true
+  showTooltipTotal: true
+  showTooltipPercentage: false
+  tooltipSortByMetric: false
+  tooltipTimeFormat: smart_date
+  extra_form_data: {}
+  dashboards:
+  - 7
+query_context: '{"datasource":{"id":1,"type":"table"},"force":false,"queries":[{"filters":[{"col":"date_receipt","op":"TEMPORAL_RANGE","val":"No
+  filter"}],"extras":{"having":"","where":""},"applied_time_extras":{},"columns":[{"columnType":"BASE_AXIS","sqlExpression":"reference_date_year","label":"reference_date_year","expressionType":"SQL","isColumnReference":true}],"metrics":[{"aggregate":"SUM","column":{"advanced_data_type":null,"certification_details":null,"certified_by":null,"column_name":"amount_paid","description":null,"expression":"","filterable":true,"groupby":true,"id":11,"is_certified":false,"is_dttm":false,"python_date_format":null,"type":"NUMERIC","type_generic":0,"uuid":"cbf01977-1d5a-4374-a45f-4a8951eed851","verbose_name":null,"warning_markdown":null},"datasourceWarning":false,"expressionType":"SIMPLE","hasCustomLabel":true,"label":"Pagati","optionName":"metric_nt0lom4mghm_fj9a9xkzvcr","sqlExpression":null},{"aggregate":"SUM","column":{"advanced_data_type":null,"certification_details":null,"certified_by":null,"column_name":"amount_reported","description":null,"expression":"","filterable":true,"groupby":true,"id":12,"is_certified":false,"is_dttm":false,"python_date_format":null,"type":"NUMERIC","type_generic":0,"uuid":"80947855-c724-4dc1-87c1-c65a5835a4e1","verbose_name":null,"warning_markdown":null},"datasourceWarning":false,"expressionType":"SIMPLE","hasCustomLabel":true,"label":"Rendicontati","optionName":"metric_yrtandtya2_6o0yvd3af9","sqlExpression":null},{"aggregate":"SUM","column":{"advanced_data_type":null,"certification_details":null,"certified_by":null,"column_name":"amount_cashed","description":null,"expression":"","filterable":true,"groupby":true,"id":13,"is_certified":false,"is_dttm":false,"python_date_format":null,"type":"NUMERIC","type_generic":0,"uuid":"c34c86c7-c425-4afe-9a64-60c14dfe9d99","verbose_name":null,"warning_markdown":null},"datasourceWarning":false,"expressionType":"SIMPLE","hasCustomLabel":true,"label":"Incassati","optionName":"metric_1fpfzrojfe4_jwbqhk3lne","sqlExpression":null}],"orderby":[[{"aggregate":"SUM","column":{"advanced_data_type":null,"certification_details":null,"certified_by":null,"column_name":"amount_paid","description":null,"expression":"","filterable":true,"groupby":true,"id":11,"is_certified":false,"is_dttm":false,"python_date_format":null,"type":"NUMERIC","type_generic":0,"uuid":"cbf01977-1d5a-4374-a45f-4a8951eed851","verbose_name":null,"warning_markdown":null},"datasourceWarning":false,"expressionType":"SIMPLE","hasCustomLabel":true,"label":"Pagati","optionName":"metric_nt0lom4mghm_fj9a9xkzvcr","sqlExpression":null},false]],"annotation_layers":[],"row_limit":100,"series_columns":[],"series_limit":0,"group_others_when_limit_reached":false,"order_desc":true,"url_params":{},"custom_params":{},"custom_form_data":{},"time_offsets":[],"post_processing":[{"operation":"pivot","options":{"index":["reference_date_year"],"columns":[],"aggregates":{"Pagati":{"operator":"mean"},"Rendicontati":{"operator":"mean"},"Incassati":{"operator":"mean"}},"drop_missing_columns":true}},{"operation":"flatten"}]}],"form_data":{"datasource":"1__table","viz_type":"echarts_timeseries_bar","slice_id":22,"x_axis":"reference_date_year","xAxisForceCategorical":false,"metrics":[{"aggregate":"SUM","column":{"advanced_data_type":null,"certification_details":null,"certified_by":null,"column_name":"amount_paid","description":null,"expression":"","filterable":true,"groupby":true,"id":11,"is_certified":false,"is_dttm":false,"python_date_format":null,"type":"NUMERIC","type_generic":0,"uuid":"cbf01977-1d5a-4374-a45f-4a8951eed851","verbose_name":null,"warning_markdown":null},"datasourceWarning":false,"expressionType":"SIMPLE","hasCustomLabel":true,"label":"Pagati","optionName":"metric_nt0lom4mghm_fj9a9xkzvcr","sqlExpression":null},{"aggregate":"SUM","column":{"advanced_data_type":null,"certification_details":null,"certified_by":null,"column_name":"amount_reported","description":null,"expression":"","filterable":true,"groupby":true,"id":12,"is_certified":false,"is_dttm":false,"python_date_format":null,"type":"NUMERIC","type_generic":0,"uuid":"80947855-c724-4dc1-87c1-c65a5835a4e1","verbose_name":null,"warning_markdown":null},"datasourceWarning":false,"expressionType":"SIMPLE","hasCustomLabel":true,"label":"Rendicontati","optionName":"metric_yrtandtya2_6o0yvd3af9","sqlExpression":null},{"aggregate":"SUM","column":{"advanced_data_type":null,"certification_details":null,"certified_by":null,"column_name":"amount_cashed","description":null,"expression":"","filterable":true,"groupby":true,"id":13,"is_certified":false,"is_dttm":false,"python_date_format":null,"type":"NUMERIC","type_generic":0,"uuid":"c34c86c7-c425-4afe-9a64-60c14dfe9d99","verbose_name":null,"warning_markdown":null},"datasourceWarning":false,"expressionType":"SIMPLE","hasCustomLabel":true,"label":"Incassati","optionName":"metric_1fpfzrojfe4_jwbqhk3lne","sqlExpression":null}],"groupby":[],"contributionMode":null,"adhoc_filters":[{"clause":"WHERE","comparator":"No
+  filter","expressionType":"SIMPLE","operator":"TEMPORAL_RANGE","subject":"date_receipt"}],"row_limit":100,"truncate_metric":true,"show_empty_columns":false,"comparison_type":"values","annotation_layers":[],"forecastPeriods":10,"forecastInterval":0.8,"orientation":"horizontal","x_axis_title_margin":15,"y_axis_title_margin":30,"y_axis_title_position":"Left","sort_series_type":"min","sort_series_ascending":false,"color_scheme":"blueItalia","show_value":false,"stack":"Stack","zoomable":false,"show_legend":true,"legendType":"plain","legendOrientation":"top","legendMargin":null,"x_axis_time_format":"smart_date","xAxisLabelInterval":"auto","y_axis_format":"$,.2f","y_axis_bounds":[null,null],"truncateXAxis":true,"rich_tooltip":true,"showTooltipTotal":true,"showTooltipPercentage":false,"tooltipSortByMetric":false,"tooltipTimeFormat":"smart_date","extra_form_data":{},"dashboards":[7],"force":false,"result_format":"json","result_type":"full"},"result_format":"json","result_type":"full"}'
+cache_timeout: null
+uuid: f60ea0b4-1c91-4e79-9f33-bc8e2ed108fd
+version: 1.0.0
+dataset_uuid: f715b3f3-f8ba-436c-804e-864158a21517

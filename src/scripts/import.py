@@ -1,15 +1,17 @@
 import io
 import os
-import re
 import sys
-import glob
+import shutil
 import logging
-import argparse
 import zipfile
 import requests
+import yaml
+from sqlalchemy.engine.url import make_url
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+BUILD_DIR = os.path.join(os.getcwd(), "build")
 
 
 class SupersetClient:
@@ -40,19 +42,23 @@ class SupersetClient:
             logger.error(f"Authentication failed on {self.base_url}: {e}")
             sys.exit(1)
 
-    def import_all_assets(self, zip_bytes: bytes, original_filename: str):
+    def import_all_assets(self, zip_bytes: bytes, zip_filename: str = "superset_full_export.zip"):
         if not self.is_authenticated:
             logger.error("Client not authenticated. Call authenticate() first.")
             sys.exit(1)
 
-        logger.info(f"Sending patched ZIP to API ({len(zip_bytes) / 1024:.1f} KB)...")
-        files = {"bundle": (original_filename, io.BytesIO(zip_bytes), "application/zip")}
+        logger.info(f"Sending ZIP to API ({len(zip_bytes) / 1024:.1f} KB)...")
+        files = {"bundle": (zip_filename, io.BytesIO(zip_bytes), "application/zip")}
 
         try:
             r = self.session.post(
                 f"{self.base_url}/api/v1/assets/import/",
                 files=files,
-                data={"passwords": "{}"},
+                # overwrite=true is required to overwrite existing assets..
+                data={
+                    "overwrite": "true",
+                    "passwords": "{}",
+                },
             )
             r.raise_for_status()
             logger.info("SUCCESS. Asset import completed.")
@@ -64,85 +70,191 @@ class SupersetClient:
             sys.exit(1)
 
 
-def inject_password_into_zip(zip_path: str) -> bytes:
+def detect_intermediate_dir(export_dir: str) -> str:
     """
-    Reads the ZIP, replaces the 'XXXXXXXXXX' placeholder in the target database
-    YAML's sqlalchemy_uri with the target DB password (from DB_PASS),
-    and returns the patched ZIP as bytes.
+    Detects the single intermediate timestamped directory inside the export folder.
+
+    Expected structure:
+        export_dir/
+            assets_export_20260310T112859/   ← this is what we detect
+                metadata.yaml
+                databases/
+                ...
+
+    Returns the name of the intermediate directory (not the full path).
+    Falls back gracefully to a flat structure if no subdirectory is found.
     """
-    db_pass = os.getenv("ANALYTICS_DB_PASSWORD")
-    if not db_pass:
-        logger.error("Environment variable DB_PASS is missing.")
+    entries = [e for e in os.scandir(export_dir) if not e.name.startswith(".")]
+    dirs  = [e for e in entries if e.is_dir()]
+    files = [e for e in entries if e.is_file()]
+
+    if files:
+        logger.warning(
+            "No intermediate directory found in the export folder. "
+            "Assuming a flat structure (metadata.yaml at root). "
+            "Re-run the export to get the canonical nested structure."
+        )
+        return ""
+
+    if len(dirs) != 1:
+        names = [d.name for d in dirs]
+        logger.error(
+            f"Expected exactly 1 intermediate directory inside {export_dir}, found: {names}. "
+            "Re-run the export or specify a different path."
+        )
         sys.exit(1)
 
-    out_buffer = io.BytesIO()
+    intermediate = dirs[0].name
+    logger.info(f"Intermediate directory detected: {intermediate}/")
+    return intermediate
 
-    with zipfile.ZipFile(zip_path, "r") as zin, \
-         zipfile.ZipFile(out_buffer, "w", compression=zipfile.ZIP_DEFLATED) as zout:
 
-        for item in zin.infolist():
-            item_path = item.filename
-            content = zin.read(item_path)
+def prepare_build(export_dir: str, intermediate_dir: str, creds: dict) -> str:
+    """
+    Copies the export folder into BUILD_DIR and patches sqlalchemy_uri in th
+    database YAML found there. The intermediate directory structure is preserved..
+    The original export folder is never modified.
+    """
+    if os.path.exists(BUILD_DIR):
+        shutil.rmtree(BUILD_DIR)
+    shutil.copytree(export_dir, BUILD_DIR)
+    logger.info(f"Export copied into build folder: {BUILD_DIR}")
 
-            if "/databases/" in item_path and item_path.endswith(".yaml"):
-                yaml_filename = os.path.basename(item_path)
-                original_yaml = content.decode("utf-8")
-                patched_yaml = re.sub(
-                    r'(sqlalchemy_uri:\s+\S+?)XXXXXXXXXX(\S*)',
-                    lambda m: m.group(1) + db_pass + m.group(2),
-                    original_yaml,
-                )
+    assets_root = os.path.join(BUILD_DIR, intermediate_dir) if intermediate_dir else BUILD_DIR
 
-                if patched_yaml == original_yaml:
-                    logger.warning(f"{yaml_filename}: no 'XXXXXXXXXX' placeholder found in URI, importing as-is.")
-                else:
-                    logger.info(f"Password injected into sqlalchemy_uri of target database: {yaml_filename}")
+    patched_count = 0
+    for root, dirs, files in os.walk(assets_root):
+        if os.path.basename(root) != "databases":
+            continue
+        for filename in files:
+            if not filename.endswith(".yaml"):
+                continue
 
-                zout.writestr(item, patched_yaml.encode("utf-8"))
+            file_path = os.path.join(root, filename)
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+
+            original_uri = data.get("sqlalchemy_uri")
+            if not original_uri:
+                logger.warning(f"{filename}: no sqlalchemy_uri found, skipping.")
+                continue
+
+            url = make_url(original_uri)
+            url = url.set(
+                username=creds["db_user"],
+                password=creds["db_pass"],
+                host=creds["db_host"],
+                port=int(creds["db_port"]),
+                database=creds["db_name"],
+            )
+            patched_uri = url.render_as_string(hide_password=False)
+
+            if original_uri == patched_uri:
+                logger.warning(f"{filename}: URI unchanged after patch — check your credentials.")
             else:
-                zout.writestr(item, content)
+                logger.info(f"Credentials injected into sqlalchemy_uri of: {filename}")
+
+            data["sqlalchemy_uri"] = patched_uri
+
+            with open(file_path, "w", encoding="utf-8") as f:
+                yaml.dump(data, f, sort_keys=False, allow_unicode=True, default_flow_style=False)
+
+            patched_count += 1
+
+    if patched_count == 0:
+        logger.warning("No database YAML files were patched. Check the export folder structure.")
+    else:
+        logger.info(f"Patched {patched_count} database YAML file(s) in {BUILD_DIR}.")
+
+    return BUILD_DIR
+
+
+def build_zip_from_folder(folder: str) -> bytes:
+    """
+    Walks the folder and builds a ZIP in memory.
+    """
+    out_buffer = io.BytesIO()
+    entries = []
+
+    with zipfile.ZipFile(out_buffer, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for root, dirs, files in os.walk(folder):
+            for filename in files:
+                file_path = os.path.join(root, filename)
+                arcname = os.path.relpath(file_path, folder).replace(os.sep, "/")
+                zf.write(file_path, arcname)
+                entries.append(arcname)
+
+    top_level = sorted({e.split("/")[0] for e in entries})
+    logger.info(f"ZIP contains {len(entries)} entries. Top-level entries: {top_level}")
+
+    metadata_entries = [e for e in entries if e.endswith("metadata.yaml")]
+    if not metadata_entries:
+        logger.warning("metadata.yaml NOT found anywhere in the ZIP — Superset will reject the import!")
+    else:
+        logger.info(f"metadata.yaml found at: {metadata_entries}")
 
     return out_buffer.getvalue()
 
 
-
-def get_latest_export(folder: str = "exports") -> str | None:
-    target_path = os.path.join(os.getcwd(), folder)
-    if not os.path.exists(target_path):
-        return None
-        
-    full_export = os.path.join(target_path, "superset_full_export.zip")
-    if os.path.exists(full_export):
-        return full_export
-        
-    return None
+def get_default_export_dir() -> str | None:
+    target_path = os.path.join(os.getcwd(), "exports", "superset_full_export")
+    return target_path if os.path.isdir(target_path) else None
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Superset full asset import")
-    parser.add_argument("--file", help="ZIP file path. If omitted, uses the latest export in exports/")
-    args = parser.parse_args()
-
-    base_url = os.getenv("SUPERSET_URL")
-    username = os.getenv("SUPERSET_USER")
-    password = os.getenv("SUPERSET_PASSWORD")
-
-    zip_file = args.file
-    if not zip_file:
-        logger.info("No ZIP file specified, looking for the latest export in exports/...")
-        zip_file = get_latest_export()
-
-    if not zip_file or not os.path.exists(zip_file):
-        logger.error("No ZIP file found. Run the export first or specify --file <path>")
+    # Expected arguments:
+    #   1  SUPERSET_URL
+    #   2  SUPERSET_USER
+    #   3  SUPERSET_PASSWORD
+    #   4  ANALYTICS_DB_USER
+    #   5  ANALYTICS_DB_PASSWORD
+    #   6  ANALYTICS_DB_HOST
+    #   7  ANALYTICS_DB_PORT
+    #   8  ANALYTICS_DB_NAME
+    if len(sys.argv) < 9:
+        print(
+            "Usage: import.py <SUPERSET_URL> <SUPERSET_USER> <SUPERSET_PASSWORD> "
+            "<ANALYTICS_DB_USER> <ANALYTICS_DB_PASSWORD> <ANALYTICS_DB_HOST> "
+            "<ANALYTICS_DB_PORT> <ANALYTICS_DB_NAME>"
+        )
         sys.exit(1)
 
+    base_url = sys.argv[1]
+    username = sys.argv[2]
+    password = sys.argv[3]
+    db_user  = sys.argv[4]
+    db_pass  = sys.argv[5]
+    db_host  = sys.argv[6]
+    db_port  = sys.argv[7]
+    db_name  = sys.argv[8]
+
+    creds = {
+        "db_user": db_user,
+        "db_pass": db_pass,
+        "db_host": db_host,
+        "db_port": db_port,
+        "db_name": db_name,
+    }
+
+    export_dir = get_default_export_dir()
+
+    if not export_dir or not os.path.isdir(export_dir):
+        logger.error("Export folder not found. Run the export first or pass EXPORT_DIR as 9th argument.")
+        sys.exit(1)
+
+    logger.info(f"Using export folder: {export_dir}")
     logger.info("--- STARTING ASSET IMPORT ---")
 
-    patched_zip_bytes = inject_password_into_zip(zip_file)
+    intermediate_dir = detect_intermediate_dir(export_dir)
+    build_dir = prepare_build(export_dir, intermediate_dir, creds)
+
+    logger.info("Building ZIP in memory from build folder...")
+    zip_bytes = build_zip_from_folder(build_dir)
+    logger.info(f"ZIP built in memory ({len(zip_bytes) / 1024:.1f} KB)")
 
     client = SupersetClient(base_url, username, password)
     client.authenticate()
-    client.import_all_assets(patched_zip_bytes, os.path.basename(zip_file))
+    client.import_all_assets(zip_bytes)
 
     logger.info("--- IMPORT COMPLETED ---")
 

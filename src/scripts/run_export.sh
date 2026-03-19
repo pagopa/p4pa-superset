@@ -1,14 +1,11 @@
 #!/bin/bash
 
-# If arguments are provided, use them to export environment variables. Otherwise, assume they're already set.
-if [ "$#" -ge 3 ]; then
-    export SUPERSET_URL="$1"
-    export SUPERSET_USER="$2"
-    export SUPERSET_PASSWORD="$3"
-fi
+if [ "$#" -ge 1 ]; then export SUPERSET_URL="$1"; fi
+if [ "$#" -ge 2 ]; then export SUPERSET_USER="$2"; fi
+if [ "$#" -ge 3 ]; then export SUPERSET_PASSWORD="$3"; fi
 
 function print_help() {
-    echo "To run the script you must ensure the following environment variables are set:"
+    echo "To run the script you have to provide the following parameters:"
     echo "1. SUPERSET_URL"
     echo "2. SUPERSET_USER"
     echo "3. SUPERSET_PASSWORD"
@@ -35,4 +32,7 @@ if [ ! -f "$PY_SCRIPT" ]; then
     exit 1
 fi
 
-python "$PY_SCRIPT"
+python -m pipenv run python "$PY_SCRIPT" \
+    "$SUPERSET_URL" \
+    "$SUPERSET_USER" \
+    "$SUPERSET_PASSWORD"

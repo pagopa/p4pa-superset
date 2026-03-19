@@ -1,23 +1,24 @@
 #!/bin/bash
 
-# If arguments are provided, use them to export environment variables. Otherwise, assume they're already set.
-if [ "$#" -ge 4 ]; then
-    export SUPERSET_URL="$1"
-    export SUPERSET_USER="$2"
-    export SUPERSET_PASSWORD="$3"
-    export ANALYTICS_DB_PASSWORD="$4"
-fi
-
-if [ "$#" -ge 5 ]; then
-    export ZIP_FILE="$5"
-fi
+if [ "$#" -ge 1 ]; then export SUPERSET_URL="$1"; fi
+if [ "$#" -ge 2 ]; then export SUPERSET_USER="$2"; fi
+if [ "$#" -ge 3 ]; then export SUPERSET_PASSWORD="$3"; fi
+if [ "$#" -ge 4 ]; then export ANALYTICS_DB_PASSWORD="$4"; fi
+if [ "$#" -ge 5 ]; then export ANALYTICS_DB_USER="$5"; fi
+if [ "$#" -ge 6 ]; then export ANALYTICS_DB_HOST="$6"; fi
+if [ "$#" -ge 7 ]; then export ANALYTICS_DB_PORT="$7"; fi
+if [ "$#" -ge 8 ]; then export ANALYTICS_DB_NAME="$8"; fi
 
 function print_help() {
-    echo "To run the script you must ensure the following environment variables are set:"
+    echo "To run the script you have to provide the following parameters:"
     echo "1. SUPERSET_URL"
     echo "2. SUPERSET_USER"
     echo "3. SUPERSET_PASSWORD"
     echo "4. ANALYTICS_DB_PASSWORD"
+    echo "5. ANALYTICS_DB_USER"
+    echo "6. ANALYTICS_DB_HOST"
+    echo "7. ANALYTICS_DB_PORT"
+    echo "8. ANALYTICS_DB_NAME"
     echo ""
 }
 
@@ -33,6 +34,10 @@ checkEnv SUPERSET_URL
 checkEnv SUPERSET_USER
 checkEnv SUPERSET_PASSWORD
 checkEnv ANALYTICS_DB_PASSWORD
+checkEnv ANALYTICS_DB_USER
+checkEnv ANALYTICS_DB_HOST
+checkEnv ANALYTICS_DB_PORT
+checkEnv ANALYTICS_DB_NAME
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PY_SCRIPT="$SCRIPT_DIR/import.py"
@@ -42,14 +47,12 @@ if [ ! -f "$PY_SCRIPT" ]; then
     exit 1
 fi
 
-if [ -n "$ZIP_FILE" ]; then
-    if [ ! -f "$ZIP_FILE" ]; then
-        echo "Cannot find ZIP file: $ZIP_FILE"
-        exit 1
-    fi
-    echo "Using ZIP file: $ZIP_FILE"
-    python3 "$PY_SCRIPT" --file "$ZIP_FILE"
-else
-    echo "No ZIP file specified, looking for the latest export in exports/..."
-    python "$PY_SCRIPT"
-fi
+python -m pipenv run python "$PY_SCRIPT" \
+    "$SUPERSET_URL" \
+    "$SUPERSET_USER" \
+    "$SUPERSET_PASSWORD" \
+    "$ANALYTICS_DB_USER" \
+    "$ANALYTICS_DB_PASSWORD" \
+    "$ANALYTICS_DB_HOST" \
+    "$ANALYTICS_DB_PORT" \
+    "$ANALYTICS_DB_NAME"
