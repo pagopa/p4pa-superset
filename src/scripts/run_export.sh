@@ -32,7 +32,7 @@ if [ ! -f "$PY_SCRIPT" ]; then
     exit 1
 fi
 
-python -m pipenv run python "$PY_SCRIPT" \
+python3 -m pipenv run python "$PY_SCRIPT" \
     "$SUPERSET_URL" \
     "$SUPERSET_USER" \
     "$SUPERSET_PASSWORD"
