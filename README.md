@@ -65,3 +65,8 @@ Ensure the following tools are installed on your machine:
 docker build -t <APP_NAME> .
 docker run --env-file <ENV_FILE> <APP_NAME>
 ```
+
+## 📑 Superset manifests
+
+The `manifests/` folder contains the exported Superset asset configurations, providing a version-controlled history of changes in the Superset environment 
+The `scripts/` folder includes the utility tools used to perform these exports and imports between environments.
