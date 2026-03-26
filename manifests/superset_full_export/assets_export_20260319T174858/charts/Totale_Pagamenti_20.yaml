@@ -1,0 +1,66 @@
+slice_name: Totale Pagamenti
+description: null
+certified_by: null
+certification_details: null
+viz_type: big_number_total
+params:
+  datasource: 1__table
+  viz_type: big_number_total
+  slice_id: 20
+  metric:
+    aggregate: null
+    column: null
+    datasourceWarning: false
+    expressionType: SQL
+    hasCustomLabel: false
+    label: SUM(amount_cashed)+SUM(amount_paid)+SUM(amount_reported)
+    optionName: metric_coul7i2wd3j_vz017ddfwuq
+    sqlExpression: SUM(amount_cashed)+SUM(amount_paid)+SUM(amount_reported)
+  adhoc_filters:
+  - clause: WHERE
+    comparator: No filter
+    datasourceWarning: false
+    expressionType: SIMPLE
+    filterOptionName: filter_hjmdxm5cdy_878w2lqt4hy
+    isExtra: false
+    isNew: false
+    operator: TEMPORAL_RANGE
+    sqlExpression: null
+    subject: date_receipt
+  header_font_size: 0.4
+  subtitle: Questa somma include i ripartiti pagati, rendicontati ed incassati
+  subtitle_font_size: 0.125
+  show_metric_name: false
+  y_axis_format: $,.2f
+  time_format: smart_date
+  force_timestamp_formatting: false
+  conditional_formatting: []
+  extra_form_data: {}
+  dashboards:
+  - 7
+  annotation_layers: []
+query_context: '{"datasource": {"id": 1, "type": "table"}, "force": false, "queries":
+  [{"filters": [{"col": "date_receipt", "op": "TEMPORAL_RANGE", "val": "No filter"}],
+  "extras": {"having": "", "where": ""}, "applied_time_extras": {}, "columns": [],
+  "metrics": [{"aggregate": null, "column": null, "datasourceWarning": false, "expressionType":
+  "SQL", "hasCustomLabel": false, "label": "SUM(amount_cashed)+SUM(amount_paid)+SUM(amount_reported)",
+  "optionName": "metric_coul7i2wd3j_vz017ddfwuq", "sqlExpression": "SUM(amount_cashed)+SUM(amount_paid)+SUM(amount_reported)"}],
+  "annotation_layers": [], "series_limit": 0, "group_others_when_limit_reached": false,
+  "order_desc": true, "url_params": {}, "custom_params": {}, "custom_form_data": {}}],
+  "form_data": {"datasource": "1__table", "viz_type": "big_number_total", "slice_id":
+  20, "metric": {"aggregate": null, "column": null, "datasourceWarning": false, "expressionType":
+  "SQL", "hasCustomLabel": false, "label": "SUM(amount_cashed)+SUM(amount_paid)+SUM(amount_reported)",
+  "optionName": "metric_coul7i2wd3j_vz017ddfwuq", "sqlExpression": "SUM(amount_cashed)+SUM(amount_paid)+SUM(amount_reported)"},
+  "adhoc_filters": [{"clause": "WHERE", "comparator": "No filter", "datasourceWarning":
+  false, "expressionType": "SIMPLE", "filterOptionName": "filter_hjmdxm5cdy_878w2lqt4hy",
+  "isExtra": false, "isNew": false, "operator": "TEMPORAL_RANGE", "sqlExpression":
+  null, "subject": "date_receipt"}], "header_font_size": 0.4, "subtitle": "Questa
+  somma include i ripartiti pagati, rendicontati ed incassati", "subtitle_font_size":
+  0.125, "show_metric_name": false, "y_axis_format": "$,.2f", "time_format": "smart_date",
+  "force_timestamp_formatting": false, "conditional_formatting": [], "extra_form_data":
+  {}, "dashboards": [7], "force": false, "result_format": "json", "result_type": "full"},
+  "result_format": "json", "result_type": "full"}'
+cache_timeout: null
+uuid: 4e509fd1-c8d0-4e19-b31c-d9d969967314
+version: 1.0.0
+dataset_uuid: f715b3f3-f8ba-436c-804e-864158a21517

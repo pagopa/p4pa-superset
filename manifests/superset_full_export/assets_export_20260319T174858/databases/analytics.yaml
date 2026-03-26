@@ -1,0 +1,14 @@
+database_name: analytics
+sqlalchemy_uri: postgresql+psycopg2://analytics:XXXXXXXXXX@p4pa-d-itn-payhub-flexible-postgresql.postgres.database.azure.com:5432/analytics
+cache_timeout: null
+expose_in_sqllab: true
+allow_run_async: false
+allow_ctas: false
+allow_cvas: false
+allow_dml: false
+allow_csv_upload: false
+extra:
+  allows_virtual_table_explore: true
+impersonate_user: false
+uuid: 798924eb-45fb-460e-95cf-90cf4cbb7ab9
+version: 1.0.0
