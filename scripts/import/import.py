@@ -70,11 +70,12 @@ class SupersetClient:
 
 def detect_intermediate_dir(export_dir: str) -> str:
     """
-    Detects the single intermediate timestamped directory inside the export folder.
+    Detects the single intermediate directory (e.g. 'assets_export' or timestamped)
+    inside the export folder.
 
     Expected structure:
         export_dir/
-            assets_export_20260310T112859/   ← this is what we detect
+            assets_export/
                 metadata.yaml
                 databases/
                 ...
@@ -256,4 +257,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main()

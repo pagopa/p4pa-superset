@@ -49,7 +49,7 @@ if [ ! -f "$PY_SCRIPT" ]; then
     exit 1
 fi
 
-cd "$SCRIPT_DIR/import" && python3 -m pipenv run python "$PY_SCRIPT" \
+cd "$SCRIPT_DIR/import" && python -m pipenv run python "$PY_SCRIPT" \
     "$SUPERSET_URL" \
     "$SUPERSET_USER" \
     "$SUPERSET_PASSWORD" \
