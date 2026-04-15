@@ -87,25 +87,38 @@ class SupersetClient:
             logger.info(f"Extracting into: {extract_dir}")
 
             with zipfile.ZipFile(zip_buffer, "r") as zf:
+                # Rename top-level directory to a fixed name 'assets_export' to avoid git diff noise.
+                name_list = zf.namelist()
+                if not name_list:
+                    logger.warning("ZIP file is empty.")
+                    return
+
+                # Detect the original intermediate directory name (first component of the first path)
+                original_root = name_list[0].split('/')[0]
+                fixed_root = "assets_export"
+                logger.info(f"Renaming intermediate directory from '{original_root}' to '{fixed_root}'")
+
                 for member in zf.infolist():
                     relative_path = member.filename
                     if not relative_path or relative_path.endswith("/"):
                         continue
 
-                    dest_path = os.path.join(extract_dir, relative_path)
+                    # Replace the original root component with the fixed one
+                    if relative_path.startswith(original_root + "/"):
+                        new_relative_path = fixed_root + relative_path[len(original_root):]
+                    elif relative_path == original_root:
+                        # Skip the root directory itself if it's explicitly in the ZIP
+                        continue
+                    else:
+                        # Should not happen with standard Superset exports
+                        new_relative_path = relative_path
+
+                    dest_path = os.path.join(extract_dir, new_relative_path)
                     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
                     with zf.open(member) as src, open(dest_path, "wb") as dst:
                         dst.write(src.read())
 
-            top_dirs = [e for e in os.scandir(extract_dir) if e.is_dir()]
-            if len(top_dirs) == 1:
-                logger.info(f"Intermediate directory preserved: {top_dirs[0].name}/")
-            else:
-                names = [e.name for e in top_dirs]
-                logger.warning(f"Expected exactly 1 intermediate directory, found: {names}")
-
-            extracted_files = sum(len(files) for _, _, files in os.walk(extract_dir))
-            logger.info(f"Extraction complete: {extracted_files} files extracted into {extract_dir}")
+            logger.info(f"Extraction complete into {extract_dir}/{fixed_root}/")
 
         except Exception as e:
             logger.error(f"Error during ZIP extraction: {e}")
