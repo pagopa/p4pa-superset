@@ -57,6 +57,7 @@ stages:
           - script: |
               python3 --version
               python3 -m pip install --user pipenv
+              cd ./scripts/import
               python3 -m pipenv sync
             displayName: "Install requirements"
 
