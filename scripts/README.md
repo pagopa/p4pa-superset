@@ -22,11 +22,11 @@ Variables can be passed as positional arguments (in the order above) or pre-expo
 | SUPERSET_URL          | Superset instance base URL                                |             |
 | SUPERSET_USER         | Superset admin username                                   | `admin`     |
 | SUPERSET_PASSWORD     | Superset admin password                                   |             |
-| ANALYTICS_DB_PASSWORD | Password of the target Analytics PostgreSQL database      |             |
-| ANALYTICS_DB_USER     | Username of the target Analytics PostgreSQL database      | `analytics` |
 | ANALYTICS_DB_HOST     | Hostname of the target Analytics PostgreSQL database      |             |
 | ANALYTICS_DB_PORT     | Port of the target Analytics PostgreSQL database          | `5432`      |
 | ANALYTICS_DB_NAME     | Database name of the target Analytics PostgreSQL database | `analytics` |
+| ANALYTICS_DB_USER     | Username of the target Analytics PostgreSQL database      | `analytics` |
+| ANALYTICS_DB_PASSWORD | Password of the target Analytics PostgreSQL database      |             |
 
 Variables can be passed as positional arguments (in the order above) or pre-exported in the shell before running the script.
 

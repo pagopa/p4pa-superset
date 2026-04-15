@@ -3,22 +3,22 @@
 if [ "$#" -ge 1 ]; then export SUPERSET_URL="$1"; fi
 if [ "$#" -ge 2 ]; then export SUPERSET_USER="$2"; fi
 if [ "$#" -ge 3 ]; then export SUPERSET_PASSWORD="$3"; fi
-if [ "$#" -ge 4 ]; then export ANALYTICS_DB_PASSWORD="$4"; fi
-if [ "$#" -ge 5 ]; then export ANALYTICS_DB_USER="$5"; fi
-if [ "$#" -ge 6 ]; then export ANALYTICS_DB_HOST="$6"; fi
-if [ "$#" -ge 7 ]; then export ANALYTICS_DB_PORT="$7"; fi
-if [ "$#" -ge 8 ]; then export ANALYTICS_DB_NAME="$8"; fi
+if [ "$#" -ge 4 ]; then export ANALYTICS_DB_HOST="$4"; fi
+if [ "$#" -ge 5 ]; then export ANALYTICS_DB_PORT="$5"; fi
+if [ "$#" -ge 6 ]; then export ANALYTICS_DB_NAME="$6"; fi
+if [ "$#" -ge 7 ]; then export ANALYTICS_DB_USER="$7"; fi
+if [ "$#" -ge 8 ]; then export ANALYTICS_DB_PASSWORD="$8"; fi
 
 function print_help() {
     echo "To run the script you have to provide the following parameters:"
     echo "1. SUPERSET_URL"
     echo "2. SUPERSET_USER"
     echo "3. SUPERSET_PASSWORD"
-    echo "4. ANALYTICS_DB_PASSWORD"
-    echo "5. ANALYTICS_DB_USER"
-    echo "6. ANALYTICS_DB_HOST"
-    echo "7. ANALYTICS_DB_PORT"
-    echo "8. ANALYTICS_DB_NAME"
+    echo "4. ANALYTICS_DB_HOST"
+    echo "5. ANALYTICS_DB_PORT"
+    echo "6. ANALYTICS_DB_NAME"
+    echo "7. ANALYTICS_DB_USER"
+    echo "8. ANALYTICS_DB_PASSWORD"
     echo ""
 }
 
@@ -33,11 +33,11 @@ function checkEnv() {
 checkEnv SUPERSET_URL
 checkEnv SUPERSET_USER
 checkEnv SUPERSET_PASSWORD
-checkEnv ANALYTICS_DB_PASSWORD
-checkEnv ANALYTICS_DB_USER
 checkEnv ANALYTICS_DB_HOST
 checkEnv ANALYTICS_DB_PORT
 checkEnv ANALYTICS_DB_NAME
+checkEnv ANALYTICS_DB_USER
+checkEnv ANALYTICS_DB_PASSWORD
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PY_SCRIPT="$SCRIPT_DIR/import/import.py"
