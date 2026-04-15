@@ -42,11 +42,11 @@ variables:
 
 stages:
   - stage: deploy
-    displayName: "Deploy to ${{ parameters.Env }}"
+    displayName: "Deploy to ${{ variables.environment }}"
     jobs:
       - job: deploy
         pool: $(poolImage)
-        displayName: "Deploy Superset manifests on ${{ parameters.Env }}"
+        displayName: "Deploy Superset manifests on ${{ variables.environment }}"
         steps:
           - checkout: self
 
