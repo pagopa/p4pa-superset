@@ -16,14 +16,14 @@ pool:
 
 variables:
   ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/uat') }}:
-    environment: 'UAT'
+    environment: 'uat'
     AZURE_SERVICE_CONNECTION: '$(uat_azure_sub_serv_conn)'
     ENV_SHORT: 'u'
 
     SUPERSET_URL: '$(UAT_SUPERSET_URL)'
 
   ${{ elseif eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
-    environment: 'PROD'
+    environment: 'prod'
     AZURE_SERVICE_CONNECTION: '$(prod_azure_sub_serv_conn)'
     ENV_SHORT: 'p'
 
@@ -31,13 +31,13 @@ variables:
 
   # every branch different from past will be considered as DEV
   ${{ else }}:
-    environment: 'DEV'
+    environment: 'dev'
     AZURE_SERVICE_CONNECTION: '$(dev_azure_sub_serv_conn)'
     ENV_SHORT: 'd'
 
     SUPERSET_URL: '$(DEV_SUPERSET_URL)'
 
-  poolImage: 'p4pa-${{ parameters.Env }}-linux-app'
+  poolImage: 'p4pa-${{ variables.environment }}-linux-app'
   KEY_VAULT_NAME: 'p4pa-${{ variables.ENV_SHORT }}-payhub-kv'
 
 stages:
