@@ -50,6 +50,16 @@ stages:
         steps:
           - checkout: self
 
+          - script: |
+              python3 --version
+              pip3 --version
+            displayName: "Display Python version"
+          - script: |
+              python3 --version
+              python3 -m pip install --user pipenv
+              python3 -m pipenv sync
+            displayName: "Install requirements"
+
           - task: AzureKeyVault@2
             displayName: "Get secrets"
             inputs:
