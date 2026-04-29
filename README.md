@@ -4,7 +4,9 @@ This application represent the presentation layer of the analytics tool related 
 
 It represents a customization of [Apache Superset](https://github.com/apache/superset).
 
-See [PU Microservice Architecture](https://pagopa.atlassian.net/wiki/spaces/SPAC/pages/1405845916/Architettura+microservizi) for more details.
+See [PU Microservice Architecture](https://raw.githubusercontent.com/pagopa/p4pa-doc/refs/heads/main/reference/technical-docs/Architettura_microservizi.pdf) for more details.
+
+See [p4pa-doc](https://github.com/pagopa/p4pa-doc) for further documentation.
 
 ## 🧱 Role
 
