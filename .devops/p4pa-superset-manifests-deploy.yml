@@ -1,0 +1,85 @@
+# Azure DevOps pipeline to deploy manifests
+trigger:
+  branches:
+    include:
+      - develop
+      - uat
+      - main
+  paths:
+    include:
+      - manifests/*
+
+pr: none
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/uat') }}:
+    environment: 'uat'
+    AZURE_SERVICE_CONNECTION: '$(uat_azure_sub_serv_conn)'
+    ENV_SHORT: 'u'
+
+    SUPERSET_URL: '$(UAT_SUPERSET_URL)'
+
+  ${{ elseif eq(variables['Build.SourceBranch'], 'refs/heads/main') }}:
+    environment: 'prod'
+    AZURE_SERVICE_CONNECTION: '$(prod_azure_sub_serv_conn)'
+    ENV_SHORT: 'p'
+
+    SUPERSET_URL: '$(PROD_SUPERSET_URL)'
+
+  # every branch different from past will be considered as DEV
+  ${{ else }}:
+    environment: 'dev'
+    AZURE_SERVICE_CONNECTION: '$(dev_azure_sub_serv_conn)'
+    ENV_SHORT: 'd'
+
+    SUPERSET_URL: '$(DEV_SUPERSET_URL)'
+
+  poolImage: 'p4pa-${{ variables.environment }}-linux-app'
+  KEY_VAULT_NAME: 'p4pa-${{ variables.ENV_SHORT }}-payhub-kv'
+
+stages:
+  - stage: deploy
+    displayName: "Deploy to ${{ variables.environment }}"
+    jobs:
+      - job: deploy
+        pool: $(poolImage)
+        displayName: "Deploy Superset manifests on ${{ variables.environment }}"
+        steps:
+          - checkout: self
+
+          - script: |
+              python3 --version
+              pip3 --version
+            displayName: "Display Python version"
+          - script: |
+              python3 --version
+              python3 -m pip install --user pipenv
+              cd ./scripts/import
+              python3 -m pipenv sync
+            displayName: "Install requirements"
+
+          - task: AzureKeyVault@2
+            displayName: "Get secrets"
+            inputs:
+              azureSubscription: $(AZURE_SERVICE_CONNECTION)
+              keyVaultName: $(KEY_VAULT_NAME)
+              secretsFilter: 'db-host,db-analytics-login-username,db-analytics-login-password,superset-admin-user,superset-admin-password'
+
+          - task: Bash@3
+            displayName: "Importing manifests"
+            inputs:
+              targetType: 'inline'
+              script: |
+                chmod +x ./scripts/run_import.sh 
+                ./scripts/run_import.sh \
+                    "$(SUPERSET_URL)" \
+                    "$(superset-admin-user)" \
+                    "$(superset-admin-password)" \
+                    "$(db-host)" \
+                    "5432" \
+                    "analytics" \
+                    "$(db-analytics-login-username)" \
+                    "$(db-analytics-login-password)"
