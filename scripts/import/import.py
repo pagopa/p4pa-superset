@@ -4,12 +4,21 @@ import sys
 import shutil
 import logging
 import zipfile
+import tempfile
 import requests
 import yaml
 from sqlalchemy.engine.url import make_url
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+
+def _require_env(name: str) -> str:
+    value = os.environ.get(name)
+    if not value:
+        logger.error(f"Required environment variable '{name}' is not set.")
+        sys.exit(1)
+    return value
 
 
 class SupersetClient:
@@ -40,26 +49,23 @@ class SupersetClient:
             logger.error(f"Authentication failed on {self.base_url}: {e}")
             sys.exit(1)
 
-    def import_all_assets(self, zip_bytes: bytes, zip_filename: str = "superset_full_export.zip"):
+    def import_dashboards(self, zip_file, zip_filename: str = "superset_full_export.zip"):
         if not self.is_authenticated:
             logger.error("Client not authenticated. Call authenticate() first.")
             sys.exit(1)
 
-        logger.info(f"Sending ZIP to API ({len(zip_bytes) / 1024:.1f} KB)...")
-        files = {"bundle": (zip_filename, io.BytesIO(zip_bytes), "application/zip")}
+        size_kb = os.fstat(zip_file.fileno()).st_size / 1024
+        logger.info(f"Sending ZIP to dashboard import API ({size_kb:.1f} KB)...")
+        files = {"formData": (zip_filename, zip_file, "application/zip")}
 
         try:
             r = self.session.post(
-                f"{self.base_url}/api/v1/assets/import/",
+                f"{self.base_url}/api/v1/dashboard/import/",
                 files=files,
-                # overwrite=true is required to overwrite existing assets..
-                data={
-                    "overwrite": "true",
-                    "passwords": "{}",
-                },
+                data={"overwrite": "true"},
             )
             r.raise_for_status()
-            logger.info("SUCCESS. Asset import completed.")
+            logger.info("SUCCESS. Dashboard import completed.")
         except requests.exceptions.HTTPError as e:
             logger.error(f"HTTP error during import: {e} — API response: {e.response.text}")
             sys.exit(1)
@@ -67,22 +73,7 @@ class SupersetClient:
             logger.error(f"Error during import: {e}")
             sys.exit(1)
 
-
 def detect_intermediate_dir(export_dir: str) -> str:
-    """
-    Detects the single intermediate directory (e.g. 'assets_export' or timestamped)
-    inside the export folder.
-
-    Expected structure:
-        export_dir/
-            assets_export/
-                metadata.yaml
-                databases/
-                ...
-
-    Returns the name of the intermediate directory (not the full path).
-    Falls back gracefully to a flat structure if no subdirectory is found.
-    """
     entries = [e for e in os.scandir(export_dir) if not e.name.startswith(".")]
     dirs  = [e for e in entries if e.is_dir()]
     files = [e for e in entries if e.is_file()]
@@ -90,16 +81,14 @@ def detect_intermediate_dir(export_dir: str) -> str:
     if files:
         logger.warning(
             "No intermediate directory found in the export folder. "
-            "Assuming a flat structure (metadata.yaml at root). "
-            "Re-run the export to get the canonical nested structure."
+            "Assuming a flat structure (metadata.yaml at root)."
         )
         return ""
 
     if len(dirs) != 1:
         names = [d.name for d in dirs]
         logger.error(
-            f"Expected exactly 1 intermediate directory inside {export_dir}, found: {names}. "
-            "Re-run the export or specify a different path."
+            f"Expected exactly 1 intermediate directory inside {export_dir}, found: {names}."
         )
         sys.exit(1)
 
@@ -109,11 +98,6 @@ def detect_intermediate_dir(export_dir: str) -> str:
 
 
 def prepare_build(export_dir: str, intermediate_dir: str, creds: dict, build_dir: str) -> str:
-    """
-    Copies the export folder into build_dir and patches sqlalchemy_uri in the
-    database YAML found there. The intermediate directory structure is preserved.
-    The original export folder is never modified.
-    """
     if os.path.exists(build_dir):
         shutil.rmtree(build_dir)
     shutil.copytree(export_dir, build_dir)
@@ -168,20 +152,21 @@ def prepare_build(export_dir: str, intermediate_dir: str, creds: dict, build_dir
     return build_dir
 
 
-def build_zip_from_folder(folder: str) -> bytes:
-    """
-    Walks the folder and builds a ZIP in memory.
-    """
-    out_buffer = io.BytesIO()
+def build_zip_to_tempfile(folder: str) -> tempfile.NamedTemporaryFile:
+    tmp = tempfile.NamedTemporaryFile(suffix=".zip", prefix="superset_import_", delete=True)
     entries = []
 
-    with zipfile.ZipFile(out_buffer, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-        for root, dirs, files in os.walk(folder):
-            for filename in files:
-                file_path = os.path.join(root, filename)
-                arcname = os.path.relpath(file_path, folder).replace(os.sep, "/")
-                zf.write(file_path, arcname)
-                entries.append(arcname)
+    try:
+        with zipfile.ZipFile(tmp, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+            for root, dirs, files in os.walk(folder):
+                for filename in files:
+                    file_path = os.path.join(root, filename)
+                    arcname = os.path.relpath(file_path, folder).replace(os.sep, "/")
+                    zf.write(file_path, arcname)
+                    entries.append(arcname)
+    except Exception:
+        tmp.close()
+        raise
 
     top_level = sorted({e.split("/")[0] for e in entries})
     logger.info(f"ZIP contains {len(entries)} entries. Top-level entries: {top_level}")
@@ -192,68 +177,55 @@ def build_zip_from_folder(folder: str) -> bytes:
     else:
         logger.info(f"metadata.yaml found at: {metadata_entries}")
 
-    return out_buffer.getvalue()
+    size_kb = os.path.getsize(tmp.name) / 1024
+    logger.info(f"ZIP written to temp file: {tmp.name} ({size_kb:.1f} KB)")
+
+    tmp.seek(0)
+    return tmp
 
 
 def main():
-    # Expected arguments:
-    #   1  SUPERSET_URL
-    #   2  SUPERSET_USER
-    #   3  SUPERSET_PASSWORD
-    #   4  ANALYTICS_DB_USER
-    #   5  ANALYTICS_DB_PASSWORD
-    #   6  ANALYTICS_DB_HOST
-    #   7  ANALYTICS_DB_PORT
-    #   8  ANALYTICS_DB_NAME
-    #   9  MANIFESTS_DIR   (absolute path to manifests/superset_full_export)
-    #   10 BUILD_DIR       (absolute path to build/)
-    if len(sys.argv) < 11:
-        print(
-            "Usage: import.py <SUPERSET_URL> <SUPERSET_USER> <SUPERSET_PASSWORD> "
-            "<ANALYTICS_DB_USER> <ANALYTICS_DB_PASSWORD> <ANALYTICS_DB_HOST> "
-            "<ANALYTICS_DB_PORT> <ANALYTICS_DB_NAME> "
-            "<MANIFESTS_DIR> <BUILD_DIR>"
-        )
+    # ── Arguments ─────────────
+    if len(sys.argv) != 4:
+        print("Usage: import.py <TAG> <MANIFESTS_DIR> <BUILD_DIR>")
+        print("All Superset and DB credentials must be set as environment variables.")
         sys.exit(1)
 
-    base_url      = sys.argv[1]
-    username      = sys.argv[2]
-    password      = sys.argv[3]
-    db_user       = sys.argv[4]
-    db_pass       = sys.argv[5]
-    db_host       = sys.argv[6]
-    db_port       = sys.argv[7]
-    db_name       = sys.argv[8]
-    manifests_dir = sys.argv[9]
-    build_dir     = sys.argv[10]
+    tag           = sys.argv[1]
+    manifests_dir = sys.argv[2]
+    build_dir     = sys.argv[3]
+
+    # ── Env var credentials────────────────────────────────────────────────
+    base_url = _require_env("SUPERSET_URL")
+    username = _require_env("SUPERSET_USER")
+    password = _require_env("SUPERSET_PASSWORD")
 
     creds = {
-        "db_user": db_user,
-        "db_pass": db_pass,
-        "db_host": db_host,
-        "db_port": db_port,
-        "db_name": db_name,
+        "db_user": _require_env("ANALYTICS_DB_USER"),
+        "db_pass": _require_env("ANALYTICS_DB_PASSWORD"),
+        "db_host": _require_env("ANALYTICS_DB_HOST"),
+        "db_port": _require_env("ANALYTICS_DB_PORT"),
+        "db_name": _require_env("ANALYTICS_DB_NAME"),
     }
 
     if not os.path.isdir(manifests_dir):
-        logger.error(f"Manifests folder not found: {manifests_dir}. Run the export first.")
+        logger.error(f"Manifests folder not found for tag '{tag}': {manifests_dir}")
         sys.exit(1)
 
     logger.info(f"Using manifests folder: {manifests_dir}")
-    logger.info("--- STARTING ASSET IMPORT ---")
+    logger.info(f"--- STARTING ASSET IMPORT (tag: {tag}) ---")
 
     intermediate_dir = detect_intermediate_dir(manifests_dir)
     build_dir = prepare_build(manifests_dir, intermediate_dir, creds, build_dir)
 
-    logger.info("Building ZIP in memory from build folder...")
-    zip_bytes = build_zip_from_folder(build_dir)
-    logger.info(f"ZIP built in memory ({len(zip_bytes) / 1024:.1f} KB)")
+    logger.info("Building ZIP to temp file from build folder...")
 
-    client = SupersetClient(base_url, username, password)
-    client.authenticate()
-    client.import_all_assets(zip_bytes)
+    with build_zip_to_tempfile(build_dir) as zip_file:
+        client = SupersetClient(base_url, username, password)
+        client.authenticate()
+        client.import_dashboards(zip_file)
 
-    logger.info("--- IMPORT COMPLETED ---")
+    logger.info(f"--- IMPORT COMPLETED (tag: {tag}) ---")
 
 
 if __name__ == "__main__":

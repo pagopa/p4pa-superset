@@ -1,14 +1,15 @@
 #!/bin/bash
 
-if [ "$#" -ge 1 ]; then export SUPERSET_URL="$1"; fi
-if [ "$#" -ge 2 ]; then export SUPERSET_USER="$2"; fi
-if [ "$#" -ge 3 ]; then export SUPERSET_PASSWORD="$3"; fi
+if [ "$#" -ge 1 ]; then export TAG="$1"; fi
 
 function print_help() {
-    echo "To run the script you have to provide the following parameters:"
-    echo "1. SUPERSET_URL"
-    echo "2. SUPERSET_USER"
-    echo "3. SUPERSET_PASSWORD"
+    echo "To run the script you must provide the TAG as a parameter:"
+    echo "Usage: $0 <TAG>"
+    echo ""
+    echo "The following environment variables must also be set:"
+    echo "- SUPERSET_URL"
+    echo "- SUPERSET_USER"
+    echo "- SUPERSET_PASSWORD"
     echo ""
 }
 
@@ -23,10 +24,10 @@ function checkEnv() {
 checkEnv SUPERSET_URL
 checkEnv SUPERSET_USER
 checkEnv SUPERSET_PASSWORD
+checkEnv TAG
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PY_SCRIPT="$SCRIPT_DIR/export/export.py"
-MANIFESTS_DIR="$(cd "$SCRIPT_DIR/.." && pwd)/manifests"
 
 if [ ! -f "$PY_SCRIPT" ]; then
     echo "Cannot find export.py at: $PY_SCRIPT"
@@ -37,4 +38,4 @@ cd "$SCRIPT_DIR/export" && python3 -m pipenv run python "$PY_SCRIPT" \
     "$SUPERSET_URL" \
     "$SUPERSET_USER" \
     "$SUPERSET_PASSWORD" \
-    "$MANIFESTS_DIR"
+    "$TAG"
