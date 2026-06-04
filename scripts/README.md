@@ -1,11 +1,21 @@
 ## 📜 Scripts
 
-Two utility scripts are provided in `scripts/` to manage Superset assets migration:
+Four utility scripts are provided in `scripts/` to manage Superset assets migration:
 
-* **run_export.sh**: Executes the **export/export.py** script that exports all Superset assets into the `manifests/superset_full_export/` folder.
-* **run_import.sh**: Executes the **import/import.py** script that patches the database credentials in the exported YAML files and imports the assets into the target Superset environment. Assets are organized by tag under `manifests/<tag>/` and the script requires a tag as its only positional argument.
+* **run_export.sh**: Executes the **export/export.py** script that exports all Superset assets into the `manifests/<TAG>/` folder. The script requires a tag as its only positional argument.
+* **run_export_core.sh**: Executes the **run_export.sh** script with the tag parameter set to **core**.
+* **run_import.sh**: Executes the **import/import.py** script that patches the database credentials in the exported YAML files and imports the assets into the target Superset environment. Assets are organized by tag under `manifests/<TAG>/` and the script requires a tag as its only positional argument.
+* **run_import_core.sh**: Executes the **run_import.sh** script with the tag parameter set to **core**.
 
-### `run_export.sh` — environment variables
+### `run_export.sh` — usage
+
+```bash
+./run_export.sh <TAG>
+```
+
+`TAG` is the only positional argument. It determines which assets to export and the folder to save them in: `manifests/<TAG>/`
+
+All other configuration must be provided as environment variables:
 
 | ENV               | DESCRIPTION                     | DEFAULT |
 |-------------------|---------------------------------|---------|
@@ -13,7 +23,22 @@ Two utility scripts are provided in `scripts/` to manage Superset assets migrati
 | SUPERSET_USER     | Superset admin username         | `admin` |
 | SUPERSET_PASSWORD | Superset admin password         |         |
 
-Variables can be passed as positional arguments (in the order above) or pre-exported in the shell before running the script.
+
+**Example:**
+
+```bash
+export SUPERSET_URL="https://superset.prod.example.com"
+export SUPERSET_USER="admin"
+export SUPERSET_PASSWORD="secret"
+
+./run_export.sh core
+```
+
+> [!TIP]
+> The **SUPERSET_PASSWORD** can be retrieved from the k8s secret **p4pa-superset-env** as **superset-admin-psw**.
+
+> [!NOTE]
+> Positional argument override for credentials has been removed. Environment variables must be set before running the script — passing credentials as positional arguments is no longer supported.
 
 ### `run_import.sh` — usage
 
