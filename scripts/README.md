@@ -47,12 +47,12 @@ All other configuration must be provided as environment variables:
 **Example:**
 
 ```bash
-export SUPERSET_URL="https://superset.prod.example.com"
+export SUPERSET_URL="https://analytics.internal.dev.p4pa.pagopa.it"
 export SUPERSET_USER="admin"
 export SUPERSET_PASSWORD="secret"
 export ANALYTICS_DB_USER="analytics"
 export ANALYTICS_DB_PASSWORD="dbsecret"
-export ANALYTICS_DB_HOST="postgres.prod.example.com"
+export ANALYTICS_DB_HOST="p4pa-d-itn-payhub-flexible-postgresql.postgres.database.azure.com"
 export ANALYTICS_DB_PORT="5432"
 export ANALYTICS_DB_NAME="analytics"
 

@@ -1,0 +1,149 @@
+slice_name: Login Success History
+description: null
+certified_by: null
+certification_details: null
+viz_type: table
+params:
+  datasource: 3__table
+  viz_type: table
+  slice_id: 18
+  query_mode: aggregate
+  groupby:
+  - access_date
+  time_grain_sqla: P1D
+  temporal_columns_lookup:
+    access_date: true
+  metrics:
+  - aggregate: null
+    column: null
+    datasourceWarning: false
+    expressionType: SQL
+    hasCustomLabel: true
+    label: '#Login Success'
+    optionName: metric_vccqkblmwpc_0p3gu6pi30sd
+    sqlExpression: COUNT(1)
+  all_columns: []
+  percent_metrics: []
+  adhoc_filters:
+  - expressionType: SIMPLE
+    subject: access_date
+    operator: TEMPORAL_RANGE
+    comparator: No filter
+    clause: WHERE
+    sqlExpression: null
+    isExtra: false
+    isNew: false
+    datasourceWarning: false
+    filterOptionName: filter_7hqtkk0rmgs_y5h210er5ko
+  - expressionType: SIMPLE
+    subject: event_type
+    operator: IN
+    operatorId: IN
+    comparator:
+    - LOGIN_SUCCESS
+    clause: WHERE
+    sqlExpression: null
+    isExtra: false
+    isNew: false
+    datasourceWarning: false
+    filterOptionName: filter_gz8i1s5xzbd_m118t3j7uzf
+  timeseries_limit_metric:
+    aggregate: COUNT_DISTINCT
+    column:
+      advanced_data_type: null
+      certification_details: null
+      certified_by: null
+      column_name: access_date
+      description: null
+      expression: null
+      filterable: true
+      groupby: true
+      id: 52
+      is_certified: false
+      is_dttm: true
+      python_date_format: null
+      type: DATE
+      type_generic: 2
+      uuid: f2a1b350-2816-4b34-ad88-828dd2da6cb3
+      verbose_name: null
+      warning_markdown: null
+    datasourceWarning: false
+    expressionType: SIMPLE
+    hasCustomLabel: false
+    label: COUNT_DISTINCT(access_date)
+    optionName: metric_8idrqwm2ln_5jki6ifw55s
+    sqlExpression: null
+  order_by_cols: []
+  order_desc: true
+  server_page_length: 10
+  row_limit: 10000
+  percent_metric_calculation: row_limit
+  table_timestamp_format: smart_date
+  allow_rearrange_columns: false
+  allow_render_html: true
+  show_cell_bars: true
+  align_pn: false
+  color_pn: true
+  comparison_color_scheme: Green
+  conditional_formatting: []
+  comparison_type: values
+  extra_form_data: {}
+  dashboards:
+  - 6
+  annotation_layers: []
+query_context: '{"datasource": {"id": 3, "type": "table"}, "force": false, "queries":
+  [{"filters": [{"col": "access_date", "op": "TEMPORAL_RANGE", "val": "No filter"},
+  {"col": "event_type", "op": "IN", "val": ["LOGIN_SUCCESS"]}], "extras": {"time_grain_sqla":
+  "P1D", "having": "", "where": ""}, "applied_time_extras": {}, "columns": [{"timeGrain":
+  "P1D", "columnType": "BASE_AXIS", "sqlExpression": "access_date", "label": "access_date",
+  "expressionType": "SQL"}], "metrics": [{"aggregate": null, "column": null, "datasourceWarning":
+  false, "expressionType": "SQL", "hasCustomLabel": true, "label": "#Login Success",
+  "optionName": "metric_vccqkblmwpc_0p3gu6pi30sd", "sqlExpression": "COUNT(1)"}],
+  "orderby": [[{"aggregate": "COUNT_DISTINCT", "column": {"advanced_data_type": null,
+  "certification_details": null, "certified_by": null, "column_name": "access_date",
+  "description": null, "expression": null, "filterable": true, "groupby": true, "id":
+  52, "is_certified": false, "is_dttm": true, "python_date_format": null, "type":
+  "DATE", "type_generic": 2, "uuid": "f2a1b350-2816-4b34-ad88-828dd2da6cb3", "verbose_name":
+  null, "warning_markdown": null}, "datasourceWarning": false, "expressionType": "SIMPLE",
+  "hasCustomLabel": false, "label": "COUNT_DISTINCT(access_date)", "optionName": "metric_8idrqwm2ln_5jki6ifw55s",
+  "sqlExpression": null}, false]], "annotation_layers": [], "row_limit": 10000, "series_limit":
+  0, "series_limit_metric": {"aggregate": "COUNT_DISTINCT", "column": {"advanced_data_type":
+  null, "certification_details": null, "certified_by": null, "column_name": "access_date",
+  "description": null, "expression": null, "filterable": true, "groupby": true, "id":
+  52, "is_certified": false, "is_dttm": true, "python_date_format": null, "type":
+  "DATE", "type_generic": 2, "uuid": "f2a1b350-2816-4b34-ad88-828dd2da6cb3", "verbose_name":
+  null, "warning_markdown": null}, "datasourceWarning": false, "expressionType": "SIMPLE",
+  "hasCustomLabel": false, "label": "COUNT_DISTINCT(access_date)", "optionName": "metric_8idrqwm2ln_5jki6ifw55s",
+  "sqlExpression": null}, "group_others_when_limit_reached": false, "order_desc":
+  true, "url_params": {}, "custom_params": {}, "custom_form_data": {}, "post_processing":
+  [], "time_offsets": []}], "form_data": {"datasource": "3__table", "viz_type": "table",
+  "slice_id": 18, "query_mode": "aggregate", "groupby": ["access_date"], "time_grain_sqla":
+  "P1D", "temporal_columns_lookup": {"access_date": true}, "metrics": [{"aggregate":
+  null, "column": null, "datasourceWarning": false, "expressionType": "SQL", "hasCustomLabel":
+  true, "label": "#Login Success", "optionName": "metric_vccqkblmwpc_0p3gu6pi30sd",
+  "sqlExpression": "COUNT(1)"}], "all_columns": [], "percent_metrics": [], "adhoc_filters":
+  [{"expressionType": "SIMPLE", "subject": "access_date", "operator": "TEMPORAL_RANGE",
+  "comparator": "No filter", "clause": "WHERE", "sqlExpression": null, "isExtra":
+  false, "isNew": false, "datasourceWarning": false, "filterOptionName": "filter_7hqtkk0rmgs_y5h210er5ko"},
+  {"expressionType": "SIMPLE", "subject": "event_type", "operator": "IN", "operatorId":
+  "IN", "comparator": ["LOGIN_SUCCESS"], "clause": "WHERE", "sqlExpression": null,
+  "isExtra": false, "isNew": false, "datasourceWarning": false, "filterOptionName":
+  "filter_gz8i1s5xzbd_m118t3j7uzf"}], "timeseries_limit_metric": {"aggregate": "COUNT_DISTINCT",
+  "column": {"advanced_data_type": null, "certification_details": null, "certified_by":
+  null, "column_name": "access_date", "description": null, "expression": null, "filterable":
+  true, "groupby": true, "id": 52, "is_certified": false, "is_dttm": true, "python_date_format":
+  null, "type": "DATE", "type_generic": 2, "uuid": "f2a1b350-2816-4b34-ad88-828dd2da6cb3",
+  "verbose_name": null, "warning_markdown": null}, "datasourceWarning": false, "expressionType":
+  "SIMPLE", "hasCustomLabel": false, "label": "COUNT_DISTINCT(access_date)", "optionName":
+  "metric_8idrqwm2ln_5jki6ifw55s", "sqlExpression": null}, "order_by_cols": [], "order_desc":
+  true, "server_page_length": 10, "row_limit": 10000, "percent_metric_calculation":
+  "row_limit", "table_timestamp_format": "smart_date", "allow_rearrange_columns":
+  false, "allow_render_html": true, "show_cell_bars": true, "align_pn": false, "color_pn":
+  true, "comparison_color_scheme": "Green", "conditional_formatting": [], "comparison_type":
+  "values", "extra_form_data": {}, "dashboards": [6], "force": false, "result_format":
+  "json", "result_type": "full"}, "result_format": "json", "result_type": "full"}'
+cache_timeout: null
+uuid: 8260e578-d734-4d34-9faf-50337ab3b08c
+version: 1.0.0
+dataset_uuid: c6680ec3-d3bd-4303-a79c-c2800b3aca32
+tags: []
