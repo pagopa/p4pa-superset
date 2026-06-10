@@ -1,1 +1,1 @@
-./run_import.sh core $@
+./run_import.sh core
