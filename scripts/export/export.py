@@ -38,23 +38,68 @@ class SupersetClient:
             logger.error(f"Authentication failed on {self.base_url}: {e}")
             sys.exit(1)
 
-    def export_all_assets(self, output_dir: str):
+    def get_dashboard_ids_by_tag(self, tag_name: str) -> list[int]:
         """
-        Exports all assets via /api/v1/assets/export/ and extracts them directly
-        into output_dir (absolute path expected).
+        Returns the list of dashboard IDs associated with the given tag,
+        using the /api/v1/tag/get_objects/ endpoint.
+        """
+        try:
+            rison_params = f"(tags:!('{tag_name}'))"
+            r = self.session.get(
+                f"{self.base_url}/api/v1/tag/get_objects/",
+                params={"q": rison_params}
+            )
+
+            if r.status_code != 200:
+                logger.error(f"Error fetching objects by tag: {r.text}")
+                r.raise_for_status()
+
+            all_objects = r.json().get("result", [])
+
+            dashboard_ids = [
+                obj["id"]
+                for obj in all_objects
+                if obj.get("type") == "dashboard"
+            ]
+
+            if not dashboard_ids:
+                logger.warning(f"No dashboards found for tag '{tag_name}'.")
+                return []
+
+            logger.info(f"Found {len(dashboard_ids)} dashboard(s) with tag '{tag_name}': {dashboard_ids}")
+            return dashboard_ids
+
+        except Exception as e:
+            logger.error(f"Error fetching dashboards by tag '{tag_name}': {e}")
+            return []
+
+    def export_dashboards_by_tag(self, tag_name: str, extract_dir: str):
+        """
+        Fetches all dashboards associated with the given tag, exports them as a ZIP
+        via /api/v1/dashboard/export/, and extracts the contents into extract_dir.
         """
         if not self.is_authenticated:
             logger.error("Client not authenticated. Call authenticate() first.")
             sys.exit(1)
 
-        os.makedirs(output_dir, exist_ok=True)
+        # 1. Resolve dashboard IDs for the tag
+        dashboard_ids = self.get_dashboard_ids_by_tag(tag_name)
+        if not dashboard_ids:
+            logger.error(f"No dashboards to export for tag '{tag_name}'. Aborting.")
+            sys.exit(1)
 
-        extract_dir = os.path.join(output_dir, "superset_full_export")
+        os.makedirs(extract_dir, exist_ok=True)
 
-        logger.info("Starting full asset export via /api/v1/assets/export/ ...")
+        # 2. Request the export ZIP for those specific IDs
+        ids_rison = "!(" + ",".join(str(i) for i in dashboard_ids) + ")"
+        logger.info(f"Exporting dashboards with IDs {dashboard_ids} ...")
 
         try:
-            r = self.session.get(f"{self.base_url}/api/v1/assets/export/", stream=True)
+            r = self.session.get(
+                f"{self.base_url}/api/v1/dashboard/export/",
+                params={"q": ids_rison},
+                stream=True,
+            )
             r.raise_for_status()
 
             # Read the ZIP response directly into memory — no zip file saved to disk
@@ -79,7 +124,7 @@ class SupersetClient:
             logger.error(f"Error during export: {e}")
             sys.exit(1)
 
-        # Extract ZIP contents directly from memory into the output folder.
+        # 3. Extract ZIP contents directly from memory into the output folder
         try:
             if os.path.exists(extract_dir):
                 shutil.rmtree(extract_dir)
@@ -87,7 +132,6 @@ class SupersetClient:
             logger.info(f"Extracting into: {extract_dir}")
 
             with zipfile.ZipFile(zip_buffer, "r") as zf:
-                # Rename top-level directory to a fixed name 'assets_export' to avoid git diff noise.
                 name_list = zf.namelist()
                 if not name_list:
                     logger.warning("ZIP file is empty.")
@@ -95,22 +139,19 @@ class SupersetClient:
 
                 # Detect the original intermediate directory name (first component of the first path)
                 original_root = name_list[0].split('/')[0]
-                fixed_root = "assets_export"
-                logger.info(f"Renaming intermediate directory from '{original_root}' to '{fixed_root}'")
+                logger.info(f"Removing intermediate directory '{original_root}' from extracted paths")
 
                 for member in zf.infolist():
                     relative_path = member.filename
                     if not relative_path or relative_path.endswith("/"):
                         continue
 
-                    # Replace the original root component with the fixed one
+                    # Remove the original root component
                     if relative_path.startswith(original_root + "/"):
-                        new_relative_path = fixed_root + relative_path[len(original_root):]
+                        new_relative_path = relative_path[len(original_root) + 1:]
                     elif relative_path == original_root:
-                        # Skip the root directory itself if it's explicitly in the ZIP
                         continue
                     else:
-                        # Should not happen with standard Superset exports
                         new_relative_path = relative_path
 
                     dest_path = os.path.join(extract_dir, new_relative_path)
@@ -118,7 +159,7 @@ class SupersetClient:
                     with zf.open(member) as src, open(dest_path, "wb") as dst:
                         dst.write(src.read())
 
-            logger.info(f"Extraction complete into {extract_dir}/{fixed_root}/")
+            logger.info(f"Extraction complete into {extract_dir}/")
 
         except Exception as e:
             logger.error(f"Error during ZIP extraction: {e}")
@@ -127,19 +168,23 @@ class SupersetClient:
 
 def main():
     if len(sys.argv) < 5:
-        print("Usage: export.py <SUPERSET_URL> <SUPERSET_USER> <SUPERSET_PASSWORD> <OUTPUT_DIR>")
+        print("Usage: export.py <SUPERSET_URL> <SUPERSET_USER> <SUPERSET_PASSWORD> <TAG>")
         sys.exit(1)
 
     base_url   = sys.argv[1]
     username   = sys.argv[2]
     password   = sys.argv[3]
-    output_dir = sys.argv[4]
+    tag        = sys.argv[4]
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    root_dir = os.path.dirname(os.path.dirname(script_dir))
+    extract_dir = os.path.join(root_dir, "manifests", tag, "assets_export")
 
     client = SupersetClient(base_url, username, password)
 
-    logger.info("--- STARTING FULL ASSET EXPORT ---")
+    logger.info(f"--- STARTING EXPORT FOR TAG '{tag}' ---")
     client.authenticate()
-    client.export_all_assets(output_dir)
+    client.export_dashboards_by_tag(tag_name=tag, extract_dir=extract_dir)
     logger.info("--- EXPORT COMPLETED ---")
 
 

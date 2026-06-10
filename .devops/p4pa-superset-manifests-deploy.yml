@@ -73,13 +73,15 @@ stages:
             inputs:
               targetType: 'inline'
               script: |
-                chmod +x ./scripts/run_import.sh 
-                ./scripts/run_import.sh \
-                    "$(SUPERSET_URL)" \
-                    "$(superset-admin-user)" \
-                    "$(superset-admin-password)" \
-                    "$(db-host)" \
-                    "5432" \
-                    "analytics" \
-                    "$(db-analytics-login-username)" \
-                    "$(db-analytics-login-password)"
+                export SUPERSET_URL="$(SUPERSET_URL)"
+                export SUPERSET_USER="$(superset-admin-user)"
+                export SUPERSET_PASSWORD="$(superset-admin-password)"
+                export ANALYTICS_DB_HOST="$(db-host)"
+                export ANALYTICS_DB_PORT="5432"
+                export ANALYTICS_DB_NAME="analytics"
+                export ANALYTICS_DB_USER="$(db-analytics-login-username)"
+                export ANALYTICS_DB_PASSWORD="$(db-analytics-login-password)"
+                
+                cd ./scripts
+                chmod +x ./run_import.sh ./run_import_core.sh
+                ./run_import_core.sh
