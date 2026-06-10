@@ -73,8 +73,9 @@ stages:
             inputs:
               targetType: 'inline'
               script: |
-                chmod +x ./scripts/run_import_core.sh 
-                ./scripts/run_import_core.sh \
+                cd ./scripts
+                chmod +x ./run_import.sh ./run_import_core.sh
+                ./run_import_core.sh \
                     "$(SUPERSET_URL)" \
                     "$(superset-admin-user)" \
                     "$(superset-admin-password)" \
