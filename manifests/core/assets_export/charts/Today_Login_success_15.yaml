@@ -82,4 +82,5 @@ cache_timeout: null
 uuid: e77f53f5-b90b-4824-bf5f-0dc86143ec44
 version: 1.0.0
 dataset_uuid: c6680ec3-d3bd-4303-a79c-c2800b3aca32
-tags: []
+tags:
+- core
