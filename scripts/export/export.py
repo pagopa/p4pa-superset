@@ -42,8 +42,34 @@ class SupersetClient:
         """
         Returns the list of dashboard IDs associated with the given tag,
         using the /api/v1/tag/get_objects/ endpoint.
+        Includes pre-validation to avoid downloading all dashboards if the tag is empty or invalid.
         """
+        
+        # 1. Controllo di sicurezza: se non viene passato alcun tag (o è una stringa vuota), esci.
+        if not tag_name or not tag_name.strip():
+            logger.error("Nessun tag fornito (stringa vuota o assente). Esportazione annullata.")
+            return []
+
         try:
+            # 2. Verifica preventiva: controlliamo se il tag esiste a sistema
+            # Usiamo l'API dei tag filtrando per nome
+            check_tag_query = f"(filters:!((col:name,opr:eq,value:'{tag_name}')))"
+            r_check_tag = self.session.get(
+                f"{self.base_url}/api/v1/tag/",
+                params={"q": check_tag_query}
+            )
+
+            if r_check_tag.status_code == 200:
+                tags_found = r_check_tag.json().get("result", [])
+                # Se la lista è vuota, il tag non esiste nel DB di Superset
+                if not tags_found:
+                    logger.error(f"Tag '{tag_name}' does not exists in Superset. Nothing exported")
+                    return []
+            else:
+                logger.error(f"Error during tag validation: {r_check_tag.text}")
+                r_check_tag.raise_for_status()
+
+            # 3. Se il tag esiste, procediamo con la logica originale per ottenere le dashboard associate
             rison_params = f"(tags:!('{tag_name}'))"
             r = self.session.get(
                 f"{self.base_url}/api/v1/tag/get_objects/",
@@ -63,7 +89,7 @@ class SupersetClient:
             ]
 
             if not dashboard_ids:
-                logger.warning(f"No dashboards found for tag '{tag_name}'.")
+                logger.warning(f"Tag '{tag_name}' exists, but has no linked dashboard.")
                 return []
 
             logger.info(f"Found {len(dashboard_ids)} dashboard(s) with tag '{tag_name}': {dashboard_ids}")
