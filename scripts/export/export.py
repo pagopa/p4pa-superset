@@ -132,12 +132,27 @@ class SupersetClient:
             sys.exit(1)
 
         os.makedirs(extract_dir, exist_ok=True)
+        # 1. Resolve dashboard IDs for the tag
+        dashboard_ids = self.get_dashboard_ids_by_tag(tag_name)
+        if not dashboard_ids:
+            logger.error(f"No dashboards to export for tag '{tag_name}'. Aborting.")
+            sys.exit(1)
 
+        os.makedirs(extract_dir, exist_ok=True)
+
+        # 2. Request the export ZIP for those specific IDs
+        ids_rison = "!(" + ",".join(str(i) for i in dashboard_ids) + ")"
+        logger.info(f"Exporting dashboards with IDs {dashboard_ids} ...")
         # 2. Request the export ZIP for those specific IDs
         ids_rison = "!(" + ",".join(str(i) for i in dashboard_ids) + ")"
         logger.info(f"Exporting dashboards with IDs {dashboard_ids} ...")
 
         try:
+            r = self.session.get(
+                f"{self.base_url}/api/v1/dashboard/export/",
+                params={"q": ids_rison},
+                stream=True,
+            )
             r = self.session.get(
                 f"{self.base_url}/api/v1/dashboard/export/",
                 params={"q": ids_rison},
@@ -222,6 +237,7 @@ def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.dirname(os.path.dirname(script_dir))
     extract_dir = os.path.join(root_dir, "manifests", tag, "assets_export")
+    tag        = sys.argv[4]
 
     client = SupersetClient(base_url, username, password)
 
