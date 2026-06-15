@@ -40,61 +40,78 @@ class SupersetClient:
 
     def get_dashboard_ids_by_tag(self, tag_name: str) -> list[int]:
         """
-        Returns the list of dashboard IDs associated with the given tag,
-        using the /api/v1/tag/get_objects/ endpoint.
-        Includes pre-validation to avoid downloading all dashboards if the tag is empty or invalid.
+        Returns dashboard IDs tagged with tag_name.
+        Uses /api/v1/dashboard/ with a tag filter.
         """
-        
-        # 1. Controllo di sicurezza: se non viene passato alcun tag (o è una stringa vuota), esci.
         if not tag_name or not tag_name.strip():
-            logger.error("Nessun tag fornito (stringa vuota o assente). Esportazione annullata.")
+            logger.error("No tag provided (empty string). Export cancelled.")
             return []
 
         try:
-            # 2. Verifica preventiva: controlliamo se il tag esiste a sistema
-            # Usiamo l'API dei tag filtrando per nome
+            # ── Step 1: Validate tag existence ──────────────────────────────────
             check_tag_query = f"(filters:!((col:name,opr:eq,value:'{tag_name}')))"
-            r_check_tag = self.session.get(
+            r_check = self.session.get(
                 f"{self.base_url}/api/v1/tag/",
-                params={"q": check_tag_query}
+                params={"q": check_tag_query},
             )
-
-            if r_check_tag.status_code == 200:
-                tags_found = r_check_tag.json().get("result", [])
-                # Se la lista è vuota, il tag non esiste nel DB di Superset
-                if not tags_found:
-                    logger.error(f"Tag '{tag_name}' does not exists in Superset. Nothing exported")
-                    return []
-            else:
-                logger.error(f"Error during tag validation: {r_check_tag.text}")
-                r_check_tag.raise_for_status()
-
-            # 3. Se il tag esiste, procediamo con la logica originale per ottenere le dashboard associate
-            rison_params = f"(tags:!('{tag_name}'))"
-            r = self.session.get(
-                f"{self.base_url}/api/v1/tag/get_objects/",
-                params={"q": rison_params}
-            )
-
-            if r.status_code != 200:
-                logger.error(f"Error fetching objects by tag: {r.text}")
-                r.raise_for_status()
-
-            all_objects = r.json().get("result", [])
-
-            dashboard_ids = [
-                obj["id"]
-                for obj in all_objects
-                if obj.get("type") == "dashboard"
-            ]
-
-            if not dashboard_ids:
-                logger.warning(f"Tag '{tag_name}' exists, but has no linked dashboard.")
+            r_check.raise_for_status()
+    
+            tags_found = r_check.json().get("result", [])
+            if not tags_found:
+                logger.error(f"Tag '{tag_name}' does not exist in Superset. Nothing exported.")
                 return []
-
-            logger.info(f"Found {len(dashboard_ids)} dashboard(s) with tag '{tag_name}': {dashboard_ids}")
-            return dashboard_ids
-
+    
+            logger.info(f"Tag '{tag_name}' found (id={tags_found[0].get('id')}). Fetching dashboards...")
+    
+            # ── Step 2: Fetch dashboards via the dashboard list API ──────────────
+            # The 'dashboard_tags' operator is natively supported and filters correctly.
+            # Pagination is handled to cope with large environments.
+            all_ids: list[int] = []
+            page = 0
+            page_size = 100
+    
+            while True:
+                rison_filter = (
+                    f"(filters:!((col:tags,opr:dashboard_tags,value:'{tag_name}')),"
+                    f"page:{page},page_size:{page_size})"
+                )
+                r = self.session.get(
+                    f"{self.base_url}/api/v1/dashboard/",
+                    params={"q": rison_filter},
+                )
+    
+                # Graceful fallback: if the operator is not supported by this Superset
+                # version, log clearly and raise so the caller can decide.
+                if r.status_code == 400:
+                    logger.warning(
+                        "'dashboard_tags' filter operator not supported by this Superset version. "
+                        "Consider upgrading Superset (>= 2.1) or use the fallback method."
+                    )
+                    r.raise_for_status()
+    
+                r.raise_for_status()
+                result = r.json()
+    
+                dashboards = result.get("result", [])
+                if not dashboards:
+                    break
+    
+                all_ids.extend(d["id"] for d in dashboards)
+    
+                # Stop when we have fetched all available records
+                total_count = result.get("count", 0)
+                if len(all_ids) >= total_count:
+                    break
+    
+                page += 1
+    
+            if not all_ids:
+                logger.warning(f"Tag '{tag_name}' exists but has no linked dashboards.")
+                return []
+    
+            logger.info(f"Found {len(all_ids)} dashboard(s) with tag '{tag_name}': {all_ids}")
+            return all_ids
+    
         except Exception as e:
             logger.error(f"Error fetching dashboards by tag '{tag_name}': {e}")
             return []
