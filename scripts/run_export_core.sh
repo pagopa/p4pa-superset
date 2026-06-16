@@ -1,1 +1,2 @@
-./run_export.sh core $@
+./run_export.sh core
+

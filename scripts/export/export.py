@@ -40,35 +40,78 @@ class SupersetClient:
 
     def get_dashboard_ids_by_tag(self, tag_name: str) -> list[int]:
         """
-        Returns the list of dashboard IDs associated with the given tag,
-        using the /api/v1/tag/get_objects/ endpoint.
+        Returns dashboard IDs tagged with tag_name.
+        Uses /api/v1/dashboard/ with a tag filter.
         """
+        if not tag_name or not tag_name.strip():
+            logger.error("No tag provided (empty string). Export cancelled.")
+            return []
+
         try:
-            rison_params = f"(tags:!('{tag_name}'))"
-            r = self.session.get(
-                f"{self.base_url}/api/v1/tag/get_objects/",
-                params={"q": rison_params}
+            # ── Step 1: Validate tag existence ──────────────────────────────────
+            check_tag_query = f"(filters:!((col:name,opr:eq,value:'{tag_name}')))"
+            r_check = self.session.get(
+                f"{self.base_url}/api/v1/tag/",
+                params={"q": check_tag_query},
             )
-
-            if r.status_code != 200:
-                logger.error(f"Error fetching objects by tag: {r.text}")
-                r.raise_for_status()
-
-            all_objects = r.json().get("result", [])
-
-            dashboard_ids = [
-                obj["id"]
-                for obj in all_objects
-                if obj.get("type") == "dashboard"
-            ]
-
-            if not dashboard_ids:
-                logger.warning(f"No dashboards found for tag '{tag_name}'.")
+            r_check.raise_for_status()
+    
+            tags_found = r_check.json().get("result", [])
+            if not tags_found:
+                logger.error(f"Tag '{tag_name}' does not exist in Superset. Nothing exported.")
                 return []
-
-            logger.info(f"Found {len(dashboard_ids)} dashboard(s) with tag '{tag_name}': {dashboard_ids}")
-            return dashboard_ids
-
+    
+            logger.info(f"Tag '{tag_name}' found (id={tags_found[0].get('id')}). Fetching dashboards...")
+    
+            # ── Step 2: Fetch dashboards via the dashboard list API ──────────────
+            # The 'dashboard_tags' operator is natively supported and filters correctly.
+            # Pagination is handled to cope with large environments.
+            all_ids: list[int] = []
+            page = 0
+            page_size = 100
+    
+            while True:
+                rison_filter = (
+                    f"(filters:!((col:tags,opr:dashboard_tags,value:'{tag_name}')),"
+                    f"page:{page},page_size:{page_size})"
+                )
+                r = self.session.get(
+                    f"{self.base_url}/api/v1/dashboard/",
+                    params={"q": rison_filter},
+                )
+    
+                # Graceful fallback: if the operator is not supported by this Superset
+                # version, log clearly and raise so the caller can decide.
+                if r.status_code == 400:
+                    logger.warning(
+                        "'dashboard_tags' filter operator not supported by this Superset version. "
+                        "Consider upgrading Superset (>= 2.1) or use the fallback method."
+                    )
+                    r.raise_for_status()
+    
+                r.raise_for_status()
+                result = r.json()
+    
+                dashboards = result.get("result", [])
+                if not dashboards:
+                    break
+    
+                all_ids.extend(d["id"] for d in dashboards)
+    
+                # Stop when we have fetched all available records
+                total_count = result.get("count", 0)
+                if len(all_ids) >= total_count:
+                    break
+    
+                page += 1
+    
+            if not all_ids:
+                logger.warning(f"Tag '{tag_name}' exists but has no linked dashboards.")
+                return []
+    
+            logger.info(f"Found {len(all_ids)} dashboard(s) with tag '{tag_name}': {all_ids}")
+            return all_ids
+    
         except Exception as e:
             logger.error(f"Error fetching dashboards by tag '{tag_name}': {e}")
             return []
@@ -89,12 +132,27 @@ class SupersetClient:
             sys.exit(1)
 
         os.makedirs(extract_dir, exist_ok=True)
+        # 1. Resolve dashboard IDs for the tag
+        dashboard_ids = self.get_dashboard_ids_by_tag(tag_name)
+        if not dashboard_ids:
+            logger.error(f"No dashboards to export for tag '{tag_name}'. Aborting.")
+            sys.exit(1)
 
+        os.makedirs(extract_dir, exist_ok=True)
+
+        # 2. Request the export ZIP for those specific IDs
+        ids_rison = "!(" + ",".join(str(i) for i in dashboard_ids) + ")"
+        logger.info(f"Exporting dashboards with IDs {dashboard_ids} ...")
         # 2. Request the export ZIP for those specific IDs
         ids_rison = "!(" + ",".join(str(i) for i in dashboard_ids) + ")"
         logger.info(f"Exporting dashboards with IDs {dashboard_ids} ...")
 
         try:
+            r = self.session.get(
+                f"{self.base_url}/api/v1/dashboard/export/",
+                params={"q": ids_rison},
+                stream=True,
+            )
             r = self.session.get(
                 f"{self.base_url}/api/v1/dashboard/export/",
                 params={"q": ids_rison},
@@ -179,6 +237,7 @@ def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.dirname(os.path.dirname(script_dir))
     extract_dir = os.path.join(root_dir, "manifests", tag, "assets_export")
+    tag        = sys.argv[4]
 
     client = SupersetClient(base_url, username, password)
 
