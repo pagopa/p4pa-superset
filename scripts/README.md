@@ -4,8 +4,10 @@ Four utility scripts are provided in `scripts/` to manage Superset assets migrat
 
 * **run_export.sh**: Executes the **export/export.py** script that exports all Superset assets into the `manifests/<TAG>/` folder. The script requires a tag as its only positional argument.
 * **run_export_core.sh**: Executes the **run_export.sh** script with the tag parameter set to **core**.
-* **run_import.sh**: Executes the **import/import.py** script that patches the database credentials in the exported YAML files and imports the assets into the target Superset environment. Assets are organized by tag under `manifests/<TAG>/` and the script requires a tag as its only positional argument.
+* **run_import.sh**: Runs the import pipeline for a given tag under `manifests/<TAG>/`, requiring the tag as its only positional argument.
 * **run_import_core.sh**: Executes the **run_import.sh** script with the tag parameter set to **core**.
+
+The import logic itself is split across two scripts, run in sequence by `run_import.sh`: **import/manifest_builder.py** builds the manifests (patching database credentials and resolving/filtering assets into a build folder), while **import/import.py** only performs the actual import of those already-built manifests into the target Superset environment.
 
 ### `run_export.sh` — usage
 
@@ -27,7 +29,7 @@ All other configuration must be provided as environment variables:
 **Example:**
 
 ```bash
-export SUPERSET_URL="https://superset.prod.example.com"
+export SUPERSET_URL="https://analytics.dev.p4pa.pagopa.it"
 export SUPERSET_USER="admin"
 export SUPERSET_PASSWORD="secret"
 
@@ -72,7 +74,7 @@ All other configuration must be provided as environment variables:
 **Example:**
 
 ```bash
-export SUPERSET_URL="https://analytics.internal.dev.p4pa.pagopa.it"
+export SUPERSET_URL="https://analytics.dev.p4pa.pagopa.it"
 export SUPERSET_USER="admin"
 export SUPERSET_PASSWORD="secret"
 export ANALYTICS_DB_USER="analytics"
