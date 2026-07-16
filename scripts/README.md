@@ -19,11 +19,11 @@ The import logic itself is split across two scripts, run in sequence by `run_imp
 
 All other configuration must be provided as environment variables:
 
-| ENV               | DESCRIPTION                     | DEFAULT |
-|-------------------|---------------------------------|---------|
-| SUPERSET_URL      | Superset instance base URL      |         |
-| SUPERSET_USER     | Superset admin username         | `admin` |
-| SUPERSET_PASSWORD | Superset admin password         |         |
+| ENV               | DESCRIPTION                     | DEFAULT                                |
+|-------------------|---------------------------------|----------------------------------------|
+| SUPERSET_URL      | Superset instance base URL      | 'https://analytics.dev.p4pa.pagopa.it' |
+| SUPERSET_USER     | Superset admin username         | `admin`                                |
+| SUPERSET_PASSWORD | Superset admin password         |                                        |
 
 
 **Example:**
@@ -62,14 +62,14 @@ All other configuration must be provided as environment variables:
 
 | ENV                   | DESCRIPTION                                               | DEFAULT     |
 |-----------------------|-----------------------------------------------------------|-------------|
-| SUPERSET_URL          | Superset instance base URL                                |             |
-| SUPERSET_USER         | Superset admin username                                   | `admin`     |
-| SUPERSET_PASSWORD     | Superset admin password                                   |             |
-| ANALYTICS_DB_PASSWORD | Password of the target Analytics PostgreSQL database      |             |
-| ANALYTICS_DB_USER     | Username of the target Analytics PostgreSQL database      | `analytics` |
-| ANALYTICS_DB_HOST     | Hostname of the target Analytics PostgreSQL database      |             |
-| ANALYTICS_DB_PORT     | Port of the target Analytics PostgreSQL database          | `5432`      |
-| ANALYTICS_DB_NAME     | Database name of the target Analytics PostgreSQL database | `analytics` |
+| SUPERSET_URL          | Superset instance base URL                                | 'https://analytics.dev.p4pa.pagopa.it' |
+| SUPERSET_USER         | Superset admin username                                   | `admin`                                |
+| SUPERSET_PASSWORD     | Superset admin password                                   |                                        |
+| ANALYTICS_DB_PASSWORD | Password of the target Analytics PostgreSQL database      |                                        |
+| ANALYTICS_DB_USER     | Username of the target Analytics PostgreSQL database      | `analytics`                            |
+| ANALYTICS_DB_HOST     | Hostname of the target Analytics PostgreSQL database      |                                        |
+| ANALYTICS_DB_PORT     | Port of the target Analytics PostgreSQL database          | `5432`                                 |
+| ANALYTICS_DB_NAME     | Database name of the target Analytics PostgreSQL database | `analytics`                            |
 
 **Example:**
 
