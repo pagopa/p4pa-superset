@@ -33,12 +33,18 @@ checkEnv ANALYTICS_DB_NAME
 
 # ── Path ──────────────────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PY_SCRIPT="$SCRIPT_DIR/import/import.py"
+BUILDER_SCRIPT="$SCRIPT_DIR/import/manifest_builder.py"
+IMPORT_SCRIPT="$SCRIPT_DIR/import/import.py"
 MANIFESTS_DIR="$(cd "$SCRIPT_DIR/.." && pwd)/manifests/$TAG"
-BUILD_DIR="$SCRIPT_DIR/import/build"
+BUILD_DIR="$SCRIPT_DIR/import/build/$TAG"
 
-if [ ! -f "$PY_SCRIPT" ]; then
-    echo "Cannot find import.py at: $PY_SCRIPT"
+if [ ! -f "$BUILDER_SCRIPT" ]; then
+    echo "Cannot find manifest_builder.py at: $BUILDER_SCRIPT"
+    exit 1
+fi
+
+if [ ! -f "$IMPORT_SCRIPT" ]; then
+    echo "Cannot find import.py at: $IMPORT_SCRIPT"
     exit 1
 fi
 
@@ -47,11 +53,15 @@ if [ ! -d "$MANIFESTS_DIR" ]; then
     exit 1
 fi
 
-echo "Importing assets for tag: $TAG"
+echo "Building manifests for tag: $TAG"
 echo "Manifests dir: $MANIFESTS_DIR"
 
 # ── Invocazione Python ────────────────────────────────────────────────────────
-cd "$SCRIPT_DIR/import" && python3 -m pipenv run python "$PY_SCRIPT" \
-    "$TAG" \
-    "$MANIFESTS_DIR" \
-    "$BUILD_DIR"
+cd "$SCRIPT_DIR/import" && \
+    python -m pipenv run python3 "$BUILDER_SCRIPT" \
+        "$TAG" \
+        "$MANIFESTS_DIR" \
+        "$BUILD_DIR" && \
+    python -m pipenv run python3 "$IMPORT_SCRIPT" \
+        "$TAG" \
+        "$BUILD_DIR"
