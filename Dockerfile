@@ -25,12 +25,9 @@ ENV TZ=${TZ}
 # Install base packages
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y \
+    apt-get install -y --no-install-recommends \
         gcc \
         git \
-        libpq-dev \
-        pkg-config \
-        python3-dev \
         tini \
         # Configure timezone + ENV=TZ \
         tzdata && \
