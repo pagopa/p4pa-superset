@@ -5,8 +5,8 @@
 #
 ARG IMAGE="ghcr.io/pagopa/superset"
 # using RC version in order to be able to use a context path different from / (SUPERSET_APP_ROOT env var)
-ARG IMAGE_VERSION="6.1.0_v1.0.1"
-ARG IMAGE_SHA="aa62cbc2bf7620856d860e658faa80a5f4d932ff3cd286220b3ac2d21da34afa"
+ARG IMAGE_VERSION="6.1.0_v1.0.0"
+ARG IMAGE_SHA="6b337957ad841f1d52a3985d6ec34b2e312f9620930b663af7c214e8bab41e15"
 
 # 🌍 Timezone Configuration
 ARG TZ="Europe/Rome"
@@ -25,12 +25,9 @@ ENV TZ=${TZ}
 # Install base packages
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y \
+    apt-get install -y --no-install-recommends \
         gcc \
         git \
-        libpq-dev \
-        pkg-config \
-        python3-dev \
         tini \
         # Configure timezone + ENV=TZ \
         tzdata && \
