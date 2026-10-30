@@ -14,7 +14,7 @@ ARG TZ="Europe/Rome"
 #
 # 📥 Base Setup Stage
 #
-FROM ${IMAGE}:${IMAGE_VERSION}@sha256:${IMAGE_SHA} AS base
+FROM ${IMAGE}@sha256:${IMAGE_SHA} AS base
 ARG TZ
 
 USER root
